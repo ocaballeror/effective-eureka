@@ -6,7 +6,7 @@ const listEl = document.getElementById('list'),
 
 
 function load() {
-    fetch('/api/jobs')
+    fetch('/api/job')
         .then(r => r.json())
         .then(data => {
             jobs = data;
@@ -32,15 +32,25 @@ function renderList() {
       <h3>${job.title}</h3>
       <div class="meta">${job.company} · ${job.location}</div>
     `;
+        if (job.viewed) {
+            el.className += ' viewed';
+        }
+
         el.onclick = e => {
             if (e.target.matches('.del')) return;
+            if (!el.classList.contains('viewed')) {
+                fetch('/api/job/' + job.id + '/view/')
+                    .then(res => {
+                        if (res.status === 200) el.classList.add('viewed')
+                    });
+            }
             document.querySelectorAll('.job-item').forEach(x => x.classList.remove('active'));
             el.classList.add('active');
             showDetails(job);
         };
         el.querySelector('.del').onclick = () => {
             if (!confirm('Delete this job?')) return;
-            fetch('/api/jobs/' + job.id, { method: 'DELETE' })
+            fetch('/api/job/' + job.id, { method: 'DELETE' })
                 .then(res => {
                     if (res.status === 200) {
                         jobs = jobs.filter(j => j.id !== job.id);

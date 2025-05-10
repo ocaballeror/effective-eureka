@@ -6,7 +6,13 @@
   --text: #24292e;
   --muted: #586069;
 }
-body,html { margin:0; padding:0; height:100%; font-family:sans-serif; background:var(--bg); }
+body,html {
+    margin:0;
+    padding:0;
+    height:100%;
+    font-family:sans-serif;
+    background:var(--bg);
+}
 
 header {
   background:#0077b7;
@@ -69,6 +75,10 @@ header img {
 }
 .job-item:hover { box-shadow:0 4px 12px rgba(0,0,0,0.1); }
 .job-item.active { border-color:var(--primary); }
+.job-item.viewed {
+    background-color: #eee;
+    opacity: 0.8;
+}
 .job-item h3 {
   margin:0 0 6px;
   font-size:18px;
