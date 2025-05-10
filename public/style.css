@@ -92,10 +92,15 @@ header img {
   flex:1;
   padding:20px;
   overflow-y:auto;
+  background:var(--card);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin: 10px 20px 10px 0px;
 }
 #details .info {
   color:var(--muted);
   margin-bottom:10px;
+  max-width: 1000px;
 }
 
 .apply-btn {
