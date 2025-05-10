@@ -4,10 +4,11 @@ const path = require('path');
 const serverless = require('serverless-http');
 const app = express();
 const router = express.Router();
-// app.use(express.json());
-// app.use(express.static(path.join(__dirname, 'public')));
 
-const DATA = 'jobs.json';
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+const DATA = path.resolve('./data/jobs.json');
 
 function readJobs() {
   return JSON.parse(fs.readFileSync(DATA, 'utf8'));
@@ -31,6 +32,5 @@ router.delete('/jobs/:id', (req, res) => {
   res.sendStatus(204);
 });
 
-// app.listen(3000, () => console.log('Listening on http://localhost:3000'));
 app.use("/api", router);
 export const handler = serverless(app);

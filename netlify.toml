@@ -4,6 +4,9 @@
 [functions]
   external_node_modules = ['express']
   node_bundler = 'esbuild'
+  directory = "functions"
+  included_files = ["data/**"]
+
 [[redirects]]
   force = true
   from = "/api/*"
