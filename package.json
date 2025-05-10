@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@netlify/blobs": "^9.1.1",
     "@netlify/functions": "^3.1.8",
     "@types/express": "^5.0.1",
     "express": "^5.1.0",
@@ -13,7 +14,7 @@
     "nodemon": "^3.1.10"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node functions/jobs.ts",
+    "dev": "NODE_NO_WARNINGS=1 BROWSER=none nodemon --watch functions --watch lib --ext mts,ts,mjs,js,html,css,ico,png,json --exec 'netlify dev'"
   }
 }

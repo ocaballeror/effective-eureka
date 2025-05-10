@@ -1,6 +1,9 @@
 [build]
   publish = "public"
 
+[dev]
+  port = 3000
+
 [functions]
   external_node_modules = ['express']
   node_bundler = 'esbuild'
@@ -11,4 +14,4 @@
   force = true
   from = "/api/*"
   status = 200
-  to = "/.netlify/functions/server/:splat"
+  to = "/.netlify/functions/:splat"
