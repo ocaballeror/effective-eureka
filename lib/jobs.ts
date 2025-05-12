@@ -75,10 +75,14 @@ export async function readJobs(): Promise<Job[]> {
 
     const ignored = await withIgnoredJobs();
     const viewed = await withViewedJobs();
+    const applied = await withAppliedJobs();
 
     const jobs = baseJobs
         .filter(item1 => !ignored.some(item2 => item2.id == item1.id))
-        .map(item => ({ "viewed": viewed.includes(item.id), ...item }));
+        .map(item => ({
+            "viewed": viewed.includes(item.id),
+            "applied": applied.includes(item.id), ...item,
+        }));
 
     return jobs;
 }
