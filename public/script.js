@@ -28,27 +28,37 @@ function renderList() {
         const el = document.createElement('div');
         el.className = 'job-item';
         el.innerHTML = `
-      <button class="del">X</button>
-      <h3>${job.title}</h3>
-      <div class="meta">${job.company} · ${job.location}</div>
+      <div class="job-actions">
+          <button class="del"><span class="material-symbols-outlined">close</span></button>
+          <button class="view-btn" data-id=${job.id}><span class="material-symbols-outlined">visibility</span></button>
+          <button class="apply-btn" data-id=${job.id}><span class="material-symbols-outlined">outgoing_mail</span></button>
+      </div>
+      <div class="job-content">
+          <h3>${job.title}</h3>
+          <div class="meta">${job.company} · ${job.location}</div>
+      </div>
     `;
         if (job.viewed) {
-            el.className += ' viewed';
+            el.classList.add('viewed');
+            el.querySelector('.view-btn span').textContent = 'visibility_off';
+        }
+        if (job.applied) {
+            el.classList.add('applied');
         }
 
+
         el.onclick = e => {
-            if (e.target.matches('.del')) return;
-            if (!el.classList.contains('viewed')) {
-                fetch('/api/job/' + job.id + '/view/')
-                    .then(res => {
-                        if (res.status === 200) el.classList.add('viewed')
-                    });
-            }
+            if (e.target.closest('.job-actions button')) return;
+            viewJob(el, job, false);
+            console.log('on click ' + e);
+
             document.querySelectorAll('.job-item').forEach(x => x.classList.remove('active'));
             el.classList.add('active');
             showDetails(job);
         };
-        el.querySelector('.del').onclick = () => {
+
+        const del = el.querySelector('.del');
+        del.onclick = () => {
             if (!confirm('Delete this job?')) return;
             fetch('/api/job/' + job.id, { method: 'DELETE' })
                 .then(res => {
@@ -63,8 +73,60 @@ function renderList() {
                     }
                 });
         };
+        // del.addEventListener('mouseenter', () => del.querySelector('span').textContent = 'delete');
+        // del.addEventListener('mouseleave', () => del.querySelector('span').textContent = 'delete_outline');
+
+        const applied = el.querySelector('.apply-btn');
+        applied.onclick = () => {
+            if (el.classList.contains('applied')) {
+                console.log("marking unapplied");
+                fetch('/api/job/' + job.id + '/unapply')
+                    .then(res => {
+                        if (res.status === 200) {
+                            job.applied = false;
+                            el.classList.remove('applied');
+                        }
+                    });
+            } else {
+                console.log("marking applied");
+                fetch('/api/job/' + job.id + '/apply')
+                    .then(res => {
+                        if (res.status === 200) {
+                            job.applied = true;
+                            el.classList.add('applied');
+                        }
+                    });
+            }
+        };
+
+        const viewbtn = el.querySelector('.view-btn');
+        viewbtn.onclick = () => viewJob(el, job, true);
         listEl.appendChild(el);
     });
+}
+
+function viewJob(el, job, cycle=false) {
+    if (el.classList.contains('viewed') && cycle) {
+        console.log("marking unviewed");
+        fetch('/api/job/' + job.id + '/unview')
+            .then(res => {
+                if (res.status === 200) {
+                    el.querySelector('.view-btn span').textContent = 'visibility';
+                    job.viewed = false;
+                    el.classList.remove('viewed');
+                }
+            });
+    } else {
+        console.log("marking viewed");
+        fetch('/api/job/' + job.id + '/view')
+            .then(res => {
+                if (res.status === 200) {
+                    el.querySelector('.view-btn span').textContent = 'visibility_off';
+                    job.viewed = true;
+                    el.classList.add('viewed');
+                }
+            });
+    }
 }
 
 function showDetails(job) {

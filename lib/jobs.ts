@@ -22,8 +22,7 @@ async function withIgnoredJobs(
     const store = getStore('jobs');
 
     const ignored = (await store.get('ignored-jobs', { type: 'json' })) || [];
-    if (ignored.length) console.log("Retrieved " + ignored.length + " ignored jobs");
-    else console.log("New list of ignored jobs");
+    console.log("Retrieved " + ignored.length + " ignored jobs");
 
     if (callback) {
         await callback(ignored);
@@ -41,8 +40,7 @@ async function withViewedJobs(
     const store = getStore('jobs');
 
     const viewed: string[] = ((await store.get('viewed', { type: 'json' })) || []).map((item: number | string) => item.toString());
-    if (viewed.length) console.log("Retrieved " + viewed.length + " viewed jobs");
-    else console.log("New list of viewed jobs");
+    console.log("Retrieved " + viewed.length + " viewed jobs");
 
     if (callback) {
         await callback(viewed);
@@ -54,6 +52,24 @@ async function withViewedJobs(
     return viewed;
 }
 
+async function withAppliedJobs(
+    callback: ((viewed: string[]) => void | Promise<void>) | void
+): Promise<string[]> {
+    const store = getStore('jobs');
+
+    const applied: string[] = ((await store.get('applied', { type: 'json' })) || []).map((item: number | string) => item.toString());
+    console.log("Retrieved " + applied.length + " applied jobs");
+
+    if (callback) {
+        await callback(applied);
+
+        console.log("Updating list with " + applied.length + " applied jobs");
+        await store.setJSON('applied', applied);
+    }
+
+    return applied;
+}
+
 export async function readJobs(): Promise<Job[]> {
     const baseJobs: Job[] = JSON.parse(fs.readFileSync(DATA, 'utf8'));
 
@@ -63,10 +79,6 @@ export async function readJobs(): Promise<Job[]> {
     const jobs = baseJobs
         .filter(item1 => !ignored.some(item2 => item2.id == item1.id))
         .map(item => ({ "viewed": viewed.includes(item.id), ...item }));
-
-    console.log(viewed.sort());
-    console.log(jobs.map(item => item.id).sort());
-    console.log(jobs.filter(item => item.viewed));
 
     return jobs;
 }
@@ -91,6 +103,36 @@ export async function viewJob(jobId: string): Promise<void> {
         if (!viewed.includes(jobId)) {
             console.log("Mark job as viewed " + jobId);
             viewed.push(jobId);
+        }
+    })
+}
+
+export async function unviewJob(jobId: string): Promise<void> {
+    console.log("Unview job " + jobId);
+    await withViewedJobs(async (viewed) => {
+        if (viewed.includes(jobId)) {
+            viewed.splice(viewed.indexOf(jobId), 1);
+            console.log("Mark job as unviewed " + jobId);
+        }
+    })
+}
+
+export async function applyJob(jobId: string): Promise<void> {
+    console.log("Apply job " + jobId);
+    await withAppliedJobs(async (applied) => {
+        if (!applied.includes(jobId)) {
+            console.log("Mark job as applied " + jobId);
+            applied.push(jobId);
+        }
+    })
+}
+
+export async function unapplyJob(jobId: string): Promise<void> {
+    console.log("Unapply job " + jobId);
+    await withAppliedJobs(async (applied) => {
+        if (applied.includes(jobId)) {
+            applied.splice(applied.indexOf(jobId), 1);
+            console.log("Mark job as unapplied " + jobId);
         }
     })
 }
