@@ -78,25 +78,17 @@ function renderList() {
 
         const applied = el.querySelector('.apply-btn');
         applied.onclick = () => {
-            if (el.classList.contains('applied')) {
-                console.log("marking unapplied");
-                fetch('/api/job/' + job.id + '/unapply')
-                    .then(res => {
-                        if (res.status === 200) {
-                            job.applied = false;
-                            el.classList.remove('applied');
-                        }
-                    });
-            } else {
-                console.log("marking applied");
-                fetch('/api/job/' + job.id + '/apply')
-                    .then(res => {
-                        if (res.status === 200) {
-                            job.applied = true;
-                            el.classList.add('applied');
-                        }
-                    });
-            }
+            // pop animation
+            applied.classList.add('clicked');
+            setTimeout(() => applied.classList.remove('clicked'), 300);
+
+            const url = `/api/job/${job.id}/${el.classList.contains('applied') ? 'unapply' : 'apply'}`;
+            fetch(url).then(res => {
+                if (res.status === 200) {
+                    job.applied = !job.applied;
+                    el.classList.toggle('applied', job.applied);
+                }
+            });
         };
 
         const viewbtn = el.querySelector('.view-btn');
@@ -105,7 +97,7 @@ function renderList() {
     });
 }
 
-function viewJob(el, job, cycle=false) {
+function viewJob(el, job, cycle = false) {
     if (el.classList.contains('viewed') && cycle) {
         console.log("marking unviewed");
         fetch('/api/job/' + job.id + '/unview')

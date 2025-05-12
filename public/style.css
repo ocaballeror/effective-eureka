@@ -114,29 +114,39 @@ header img {
     cursor:pointer;
     color:#000;
     margin:0px;
+    transition: transform 0.15s ease, background-color 0.3s ease;
+    padding: 6px;
+    border-radius: 4px;
+}
+.job-actions button:active {
+    transform: scale(0.9);
 }
 .job-actions button:hover {
     box-shadow:0 4px 12px rgba(0, 0, 0, 0.9);
+}
+
+.job-actions .del span {
+    transition: content 0.3s ease;
 }
 .job-actions button.del:hover {
     background: red;
 }
 
-.del span {
-    transition: content 0.3s ease;
-}
-.del:hover span {
-    font-variation-settings: 'FILL 1';
+.job-item.applied .apply-btn {
+    background-color: #28a745;
 }
 
-.apply-btn span:hover {
-    color: green;
+.job-actions.applied .apply-btn span {
     font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-.applied .apply-btn span {
-    color: green;
-    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+@keyframes pop {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.2); }
+}
+
+.job-actions .apply-btn.clicked {
+    animation: pop 0.3s ease;
 }
 
 #details {
