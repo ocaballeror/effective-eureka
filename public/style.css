@@ -157,6 +157,7 @@ header img {
     border-radius: 6px;
     border: 1px solid var(--border);
     margin: 10px 20px 10px 0px;
+    font-size: large;
 }
 #details .info {
     color:var(--muted);
