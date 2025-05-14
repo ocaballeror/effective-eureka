@@ -13,6 +13,7 @@ export type Job = {
     created: Date;
     updated: Date;
     viewed?: boolean;
+    stale: boolean;
 };
 
 const DATA = path.resolve('./data/jobs.json');
@@ -58,14 +59,15 @@ export async function readJobs(): Promise<Job[]> {
     ])
 
     return baseJobs
-        .filter(item => !ignored.includes(item.id))
-        .map(item => ({
-            "viewed": viewed.includes(item.id),
-            "applied": applied.includes(item.id),
-            ...item,
-            "created": new Date(item.created),
-            "updated": new Date(item.updated),
+        .filter(job => !ignored.includes(job.id))
+        .map(job => ({
+            "viewed": viewed.includes(job.id),
+            "applied": applied.includes(job.id),
+            ...job,
+            "created": new Date(job.created),
+            "updated": new Date(job.updated),
         }))
+        .filter(job => !job.stale || job.applied)
         .sort((a, b) => b.created.getTime() - a.created.getTime());
 }
 
