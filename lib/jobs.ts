@@ -1,6 +1,6 @@
-import fs from 'fs';
 import path from 'path';
 import { getStore } from '@netlify/blobs';
+import { promises as fs } from 'fs';
 
 export type Job = {
     id: string;
@@ -16,15 +16,19 @@ export type Job = {
 };
 
 const DATA = path.resolve('./data/jobs.json');
+const baseJobs: Job[] = JSON.parse(
+    await fs.readFile(DATA, 'utf8'),
+    (key, value) => (key == 'created' || key == 'updated') ? new Date(value) : value
+);
+const store = getStore('jobs');
 
 
 async function manageList<T>(
     key: string,
     callback?: (items: T[]) => void | Promise<void>
 ): Promise<T[]> {
-    const store = getStore('jobs');
-
     const data = ((await store.get(key, { type: 'json' })) || []) as T[];
+    console.log(`Found ${data.length} jobs at ${key}`)
     if (callback) {
         await callback(data);
         console.log(`Updating list ${key} with ${data.length} items`);
@@ -34,16 +38,27 @@ async function manageList<T>(
     return data;
 }
 
+async function migrate() {
+    const data = await store.get('ignored-jobs', { type: 'json' });
+    if (!data) {
+        console.log('Migration already done. ignored-jobs does not exist');
+        return;
+    }
+    await store.setJSON('ignored', data.map((job: Job) => job.id));
+    console.log("Migrating 'ignored-jobs' to 'ignored'");
+    // await store.delete('ignored-jobs');
+}
+
 
 export async function readJobs(): Promise<Job[]> {
-    const baseJobs: Job[] = JSON.parse(fs.readFileSync(DATA, 'utf8'));
+    await migrate();
 
-    const ignored = await manageList<Job>('ignored-jobs');
-    const viewed = await manageList<string>('viewed');
-    const applied = await manageList<string>('applied');
+    const [ignored, viewed, applied] = await Promise.all([
+        manageList('ignored'), manageList('viewed'), manageList('applied')
+    ])
 
-    const jobs = baseJobs
-        .filter(item1 => !ignored.some(item2 => item2.id == item1.id))
+    return baseJobs
+        .filter(item => !ignored.includes(item.id))
         .map(item => ({
             "viewed": viewed.includes(item.id),
             "applied": applied.includes(item.id),
@@ -52,60 +67,23 @@ export async function readJobs(): Promise<Job[]> {
             "updated": new Date(item.updated),
         }))
         .sort((a, b) => b.created.getTime() - a.created.getTime());
-
-    return jobs;
-}
-
-export async function ignoreJob(jobId: string): Promise<void> {
-    console.log("Ignoring job " + jobId);
-    const allJobs: Job[] = JSON.parse(fs.readFileSync(DATA, 'utf8'));
-
-    await manageList<Job>('ignored-jobs', async (ignored) => {
-        if (!ignored.some(item => item.id == jobId)) {
-            const job = allJobs.find(j => j.id == jobId);
-            job ? ignored.push(job) : console.log("Cannot find job");
-        }
-        else console.log("Job already ignored");
-    });
 }
 
 
-export async function viewJob(jobId: string): Promise<void> {
-    console.log("View job " + jobId);
-    await manageList<string>('viewed', async (viewed) => {
-        if (!viewed.includes(jobId)) {
-            console.log("Mark job as viewed " + jobId);
-            viewed.push(jobId);
-        }
+async function toggle(
+    key: string,
+    id: string,
+    shouldHave: boolean
+): Promise<void> {
+    await manageList(key, items => {
+        const has = items.includes(id)
+        if (shouldHave && !has) items.push(id)
+        if (!shouldHave && has) items.splice(items.indexOf(id), 1)
     })
 }
 
-export async function unviewJob(jobId: string): Promise<void> {
-    console.log("Unview job " + jobId);
-    await manageList<string>('viewed', async (viewed) => {
-        if (viewed.includes(jobId)) {
-            viewed.splice(viewed.indexOf(jobId), 1);
-            console.log("Mark job as unviewed " + jobId);
-        }
-    })
-}
-
-export async function applyJob(jobId: string): Promise<void> {
-    console.log("Apply job " + jobId);
-    await manageList<string>('applied', async (applied) => {
-        if (!applied.includes(jobId)) {
-            console.log("Mark job as applied " + jobId);
-            applied.push(jobId);
-        }
-    })
-}
-
-export async function unapplyJob(jobId: string): Promise<void> {
-    console.log("Unapply job " + jobId);
-    await manageList<string>('applied', async (applied) => {
-        if (applied.includes(jobId)) {
-            applied.splice(applied.indexOf(jobId), 1);
-            console.log("Mark job as unapplied " + jobId);
-        }
-    })
-}
+export const ignoreJob = (id: string) => toggle('ignored', id, true)
+export const viewJob = (id: string) => toggle('viewed', id, true)
+export const unviewJob = (id: string) => toggle('viewed', id, false)
+export const applyJob = (id: string) => toggle('applied', id, true)
+export const unapplyJob = (id: string) => toggle('applied', id, false)
