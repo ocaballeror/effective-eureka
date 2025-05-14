@@ -10,6 +10,10 @@ const listEl = document.getElementById('list'),
     confirmOkBtn = document.getElementById('confirm-ok'),
     confirmCancelBtn = document.getElementById('confirm-cancel');
 
+let appliedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
+let viewedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
+let locationState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
+
 const endpoints = {
     list: () => `/api/job`,
     view: id => `/api/job/${id}/view`,
@@ -18,6 +22,7 @@ const endpoints = {
     unapply: id => `/api/job/${id}/unapply`,
     delete: id => `/api/job/${id}`,
 };
+
 
 function showToast(title, body = '', duration = 10000) {
     const t = document.createElement('div');
@@ -116,7 +121,7 @@ async function load() {
     try {
         jobs = await api(endpoints.list());
         filtered = jobs;
-        renderList();
+        applyFilter();
         selectFirstJob();
     } catch (err) {
         console.error("Failed to load jobs:", err);
@@ -175,9 +180,9 @@ function createJobEl(job) {
 }
 
 function renderList() {
+    listEl.innerHTML = '';
     const frag = document.createDocumentFragment();
     filtered.forEach(job => frag.appendChild(createJobEl(job)));
-    listEl.innerHTML = '';
     listEl.appendChild(frag);
 }
 
@@ -195,12 +200,19 @@ function showDetails(job) {
 
 function applyFilter() {
     const q = searchEl.value.toLowerCase();
-    filtered = jobs.filter(j =>
-        j.title.toLowerCase().includes(q) ||
-        j.company.toLowerCase().includes(q) ||
-        j.location.toLowerCase().includes(q) ||
-        j.description.toLowerCase().includes(q)
-    );
+
+    filtered = jobs.filter(j => {
+        const matchesSearch = j.title.toLowerCase().includes(q) ||
+            j.company.toLowerCase().includes(q) ||
+            j.description.toLowerCase().includes(q);
+        const matchesViewed = viewedState === 0 || (viewedState === 1 && !j.viewed) || (viewedState === 2 && j.viewed);
+        const matchesApplied = appliedState === 0 || (appliedState === 1 && !j.applied) || (appliedState === 2 && j.applied);
+        const matchesLocation = locationState === 0 ||
+            (locationState === 1 && j.location.toLowerCase().includes('berlin')) ||
+            (locationState === 2 && !j.location.toLowerCase().includes('berlin'));
+
+        return matchesSearch && matchesViewed && matchesApplied && matchesLocation;
+    });
     renderList();
 }
 
@@ -230,6 +242,46 @@ clearBtn.addEventListener('click', () => {
     applyFilter();
     clearBtn.style.display = 'none';
     searchEl.focus();
+});
+
+document.getElementById('viewed-toggle').addEventListener('click', () => {
+    viewedState = (viewedState + 1) % 3;
+    const viewedToggle = document.querySelector('#viewed-toggle span:not(.material-symbols-outlined)');
+    if (viewedState === 0) {
+        viewedToggle.textContent = 'Show viewed';
+    } else if (viewedState === 1) {
+        viewedToggle.textContent = 'Hide viewed';
+    } else {
+        viewedToggle.textContent = 'Viewed only';
+    }
+    applyFilter();
+});
+
+
+document.getElementById('applied-toggle').addEventListener('click', () => {
+    appliedState = (appliedState + 1) % 3;
+    const appliedToggle = document.querySelector('#applied-toggle span:not(.material-symbols-outlined)');
+    if (appliedState === 0) {
+        appliedToggle.textContent = 'Show Applied';
+    } else if (appliedState === 1) {
+        appliedToggle.textContent = 'Hide Applied';
+    } else {
+        appliedToggle.textContent = 'Applied Only';
+    }
+    applyFilter();
+});
+
+document.getElementById('location-toggle').addEventListener('click', () => {
+    locationState = (locationState + 1) % 3;
+    const locationToggle = document.querySelector('#location-toggle span:not(.material-symbols-outlined)');
+    if (locationState === 0) {
+        locationToggle.textContent = 'Berlin/Spain';
+    } else if (locationState === 1) {
+        locationToggle.textContent = 'Berlin only';
+    } else {
+        locationToggle.textContent = 'Spain only';
+    }
+    applyFilter();
 });
 
 load();

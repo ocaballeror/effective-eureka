@@ -1,36 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Dasha finds a job</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"/> -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-</head>
-<body>
-  <header>
-    <a href="https://www.youtube.com/watch?v=W85F-UmnbF4">
-        <img src="hunchen2.png">
-    </a>
-    <div class="search-container">
-        <input id="search" placeholder="Search jobs…">
-        <button id="clear-btn" title="Clear search">x</button>
-    </div>
-  </header>
-  <div id="app">
-    <div id="list"></div>
-    <div id="details"><em>Select a job…</em></div>
-  </div>
-  <div id="toast-container"></div>
-  <div id="confirm-overlay" class="hidden">
-    <div class="confirm-box">
-      <p id="confirm-message"></p>
-      <div class="confirm-buttons">
-          <button id="confirm-cancel"><img src="jazzo.png"></button>
-        <button id="confirm-ok"><img src="jazzo.png"></button>
-      </div>
-    </div>
-  <script src="script.js"></script>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <title>Dasha finds a job</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="icon" href="favicon.ico" type="image/x-icon">
+        <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"/> -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    </head>
+    <body>
+        <header>
+            <a href="https://www.youtube.com/watch?v=W85F-UmnbF4">
+                <img src="hunchen2.png">
+            </a>
+            <div class="search-container">
+                <input id="search" placeholder="Search jobs…">
+                <button id="clear-btn" title="Clear search">x</button>
+            </div>
+        </header>
+        <div id="app">
+            <div id="list-container">
+                <div class="filter-container">
+                    <button id="viewed-toggle" class="toggle-button">
+                        <span class="material-symbols-outlined">visibility</span>
+                        <span>Show Viewed</span>
+                    </button>
+                    <button id="applied-toggle" class="toggle-button">
+                        <span class="material-symbols-outlined">outgoing_mail</span>
+                        <span>Show Applied</span>
+                    </button>
+                    <button id="location-toggle" class="toggle-button">
+                        <span class="material-symbols-outlined">public</span>
+                        <span>Berlin/Spain</span>
+                    </button>
+                </div>
+                <div id="list"></div>
+            </div>
+            <div id="details"><em>Select a job…</em></div>
+        </div>
+        <div id="toast-container"></div>
+        <div id="confirm-overlay" class="hidden">
+            <div class="confirm-box">
+                <p id="confirm-message"></p>
+                <div class="confirm-buttons">
+                    <button id="confirm-cancel"><img src="jazzo.png"></button>
+                    <button id="confirm-ok"><img src="jazzo.png"></button>
+                </div>
+            </div>
+            <script src="script.js"></script>
+    </body>
 </html>
