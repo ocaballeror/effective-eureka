@@ -212,7 +212,7 @@ function applyFilter() {
         const matchesViewed = viewedState === 0 || (viewedState === 1 && !j.viewed) || (viewedState === 2 && j.viewed);
         const matchesApplied = appliedState === 0 || (appliedState === 1 && !j.applied) || (appliedState === 2 && j.applied);
         const matchesLocation = locationState === 0 ||
-            (locationState === 1 && (j.location.toLowerCase().includes('berlin') || j.location.toLowerCase().include('germany'))) ||
+            (locationState === 1 && (j.location.toLowerCase().includes('berlin') || j.location.toLowerCase().includes('germany'))) ||
             (locationState === 2 && (!j.location.toLowerCase().includes('berlin') && !j.location.toLowerCase().includes('germany')));
 
         return matchesSearch && matchesViewed && matchesApplied && matchesLocation;
