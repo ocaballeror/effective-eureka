@@ -200,16 +200,20 @@ function showDetails(job) {
 
 function applyFilter() {
     const q = searchEl.value.toLowerCase();
+    const viewedState = parseInt(document.getElementById('viewed-dropdown').value, 10);
+    const appliedState = parseInt(document.getElementById('applied-dropdown').value, 10);
+    const locationState = parseInt(document.getElementById('location-dropdown').value, 10);
 
     filtered = jobs.filter(j => {
         const matchesSearch = j.title.toLowerCase().includes(q) ||
             j.company.toLowerCase().includes(q) ||
+            j.location.toLowerCase().includes(q) ||
             j.description.toLowerCase().includes(q);
         const matchesViewed = viewedState === 0 || (viewedState === 1 && !j.viewed) || (viewedState === 2 && j.viewed);
         const matchesApplied = appliedState === 0 || (appliedState === 1 && !j.applied) || (appliedState === 2 && j.applied);
         const matchesLocation = locationState === 0 ||
-            (locationState === 1 && j.location.toLowerCase().includes('berlin')) ||
-            (locationState === 2 && !j.location.toLowerCase().includes('berlin'));
+            (locationState === 1 && (j.location.toLowerCase().includes('berlin') || j.location.toLowerCase().include('germany'))) ||
+            (locationState === 2 && (!j.location.toLowerCase().includes('berlin') && !j.location.toLowerCase().includes('germany')));
 
         return matchesSearch && matchesViewed && matchesApplied && matchesLocation;
     });
@@ -244,44 +248,48 @@ clearBtn.addEventListener('click', () => {
     searchEl.focus();
 });
 
-document.getElementById('viewed-toggle').addEventListener('click', () => {
-    viewedState = (viewedState + 1) % 3;
-    const viewedToggle = document.querySelector('#viewed-toggle span:not(.material-symbols-outlined)');
-    if (viewedState === 0) {
-        viewedToggle.textContent = 'Show viewed';
-    } else if (viewedState === 1) {
-        viewedToggle.textContent = 'Hide viewed';
-    } else {
-        viewedToggle.textContent = 'Viewed only';
-    }
-    applyFilter();
-});
+// document.getElementById('viewed-toggle').addEventListener('click', () => {
+//     viewedState = (viewedState + 1) % 3;
+//     const viewedToggle = document.querySelector('#viewed-toggle span:not(.material-symbols-outlined)');
+//     if (viewedState === 0) {
+//         viewedToggle.textContent = 'Show viewed';
+//     } else if (viewedState === 1) {
+//         viewedToggle.textContent = 'Hide viewed';
+//     } else {
+//         viewedToggle.textContent = 'Viewed only';
+//     }
+//     applyFilter();
+// });
 
 
-document.getElementById('applied-toggle').addEventListener('click', () => {
-    appliedState = (appliedState + 1) % 3;
-    const appliedToggle = document.querySelector('#applied-toggle span:not(.material-symbols-outlined)');
-    if (appliedState === 0) {
-        appliedToggle.textContent = 'Show Applied';
-    } else if (appliedState === 1) {
-        appliedToggle.textContent = 'Hide Applied';
-    } else {
-        appliedToggle.textContent = 'Applied Only';
-    }
-    applyFilter();
-});
+// document.getElementById('applied-toggle').addEventListener('click', () => {
+//     appliedState = (appliedState + 1) % 3;
+//     const appliedToggle = document.querySelector('#applied-toggle span:not(.material-symbols-outlined)');
+//     if (appliedState === 0) {
+//         appliedToggle.textContent = 'Show Applied';
+//     } else if (appliedState === 1) {
+//         appliedToggle.textContent = 'Hide Applied';
+//     } else {
+//         appliedToggle.textContent = 'Applied Only';
+//     }
+//     applyFilter();
+// });
 
-document.getElementById('location-toggle').addEventListener('click', () => {
-    locationState = (locationState + 1) % 3;
-    const locationToggle = document.querySelector('#location-toggle span:not(.material-symbols-outlined)');
-    if (locationState === 0) {
-        locationToggle.textContent = 'Berlin/Spain';
-    } else if (locationState === 1) {
-        locationToggle.textContent = 'Berlin only';
-    } else {
-        locationToggle.textContent = 'Spain only';
-    }
-    applyFilter();
-});
+// document.getElementById('location-toggle').addEventListener('click', () => {
+//     locationState = (locationState + 1) % 3;
+//     const locationToggle = document.querySelector('#location-toggle span:not(.material-symbols-outlined)');
+//     if (locationState === 0) {
+//         locationToggle.textContent = 'Berlin/Spain';
+//     } else if (locationState === 1) {
+//         locationToggle.textContent = 'Berlin only';
+//     } else {
+//         locationToggle.textContent = 'Spain only';
+//     }
+//     applyFilter();
+// });
+
+document.getElementById('viewed-dropdown').addEventListener('change', applyFilter);
+document.getElementById('applied-dropdown').addEventListener('change', applyFilter);
+document.getElementById('location-dropdown').addEventListener('change', applyFilter);
 
 load();

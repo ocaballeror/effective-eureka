@@ -21,18 +21,21 @@
         <div id="app">
             <div id="list-container">
                 <div class="filter-container">
-                    <button id="viewed-toggle" class="toggle-button">
-                        <span class="material-symbols-outlined">visibility</span>
-                        <span>Show Viewed</span>
-                    </button>
-                    <button id="applied-toggle" class="toggle-button">
-                        <span class="material-symbols-outlined">outgoing_mail</span>
-                        <span>Show Applied</span>
-                    </button>
-                    <button id="location-toggle" class="toggle-button">
-                        <span class="material-symbols-outlined">public</span>
-                        <span>Berlin/Spain</span>
-                    </button>
+                    <select id="viewed-dropdown" class="filter-dropdown">
+                        <option value="0">Show Viewed</option>
+                        <option value="1">Hide Viewed</option>
+                        <option value="2">Viewed Only</option>
+                    </select>
+                    <select id="applied-dropdown" class="filter-dropdown">
+                        <option value="0">Show Applied</option>
+                        <option value="1">Hide Applied</option>
+                        <option value="2">Applied Only</option>
+                    </select>
+                    <select id="location-dropdown" class="filter-dropdown">
+                        <option value="0">Berlin/Spain</option>
+                        <option value="1">Berlin Only</option>
+                        <option value="2">Spain Only</option>
+                    </select>
                 </div>
                 <div id="list"></div>
             </div>
