@@ -7,9 +7,11 @@ export type Job = {
     title: string;
     company: string;
     location: string;
-    description?: string;
-    html?: string;
-    link?: string;
+    description: string;
+    html: string;
+    link: string;
+    created: Date;
+    updated: Date;
     viewed?: boolean;
 };
 
@@ -81,8 +83,12 @@ export async function readJobs(): Promise<Job[]> {
         .filter(item1 => !ignored.some(item2 => item2.id == item1.id))
         .map(item => ({
             "viewed": viewed.includes(item.id),
-            "applied": applied.includes(item.id), ...item,
-        }));
+            "applied": applied.includes(item.id),
+            ...item,
+            "created": new Date(item.created),
+            "updated": new Date(item.updated),
+        }))
+        .sort((a, b) => b.created.getTime() - a.created.getTime());
 
     return jobs;
 }
