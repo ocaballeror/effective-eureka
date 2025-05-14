@@ -47,7 +47,7 @@ async function migrate() {
     }
     await store.setJSON('ignored', data.map((job: Job) => job.id));
     console.log("Migrating 'ignored-jobs' to 'ignored'");
-    // await store.delete('ignored-jobs');
+    await store.delete('ignored-jobs');
 }
 
 
