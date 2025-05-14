@@ -64,7 +64,7 @@ header img {
 
 #app {
     display: flex;
-    height: 100%;
+    height: calc(100vh - 52px); /* Adjust based on your header height */
 }
 #list-container {
     width: 440px;
@@ -163,7 +163,6 @@ header img {
     border: 1px solid var(--border);
     margin: 0px 20px 10px 0px;
     font-size: large;
-    height: 100%;
 }
 #details .info {
     color:var(--muted);
