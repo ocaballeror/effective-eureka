@@ -22,13 +22,13 @@ const baseJobs: Job[] = JSON.parse(
     await fs.readFile(DATA, 'utf8'),
     (key, value) => (key == 'created' || key == 'updated') ? new Date(value) : value
 );
-const store = getStore('jobs');
 
 
 async function manageList<T>(
     key: string,
     callback?: (items: T[]) => void | Promise<void>
 ): Promise<T[]> {
+    const store = getStore('jobs');
     const data = ((await store.get(key, { type: 'json' })) || []) as T[];
     console.log(`Found ${data.length} jobs at ${key}`)
     if (callback) {
