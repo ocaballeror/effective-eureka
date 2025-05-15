@@ -421,20 +421,25 @@ input:checked + .slider:before {
 }
 
 .profile-button {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.3s;
+    padding: 0;
 }
 
 .profile-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.profile-button .profile-image {
+    margin: 0;
 }
 
 .profile-button span {
@@ -488,4 +493,22 @@ input:checked + .slider:before {
 
 .profile-option span {
     font-size: 20px;
+}
+
+.profile-image {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-image: url('hunchen2.png');
+    background-size: 16px 32px;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+.profile-image.top-half {
+    background-position: 0 0;
+}
+
+.profile-image.bottom-half {
+    background-position: 0 -16px;
 }

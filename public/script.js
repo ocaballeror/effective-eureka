@@ -329,6 +329,17 @@ function switchProfile(profile) {
         btn.classList.toggle('active', btn.dataset.profile === profile);
     });
     
+    const profileIconClass = profile === 'pm' ? 'top-half' : 'bottom-half';
+    const currentIcon = profileBtn.querySelector('span, .profile-image');
+    
+    if (currentIcon) {
+        currentIcon.remove();
+    }
+    
+    const newIcon = document.createElement('div');
+    newIcon.className = `profile-image ${profileIconClass}`;
+    profileBtn.prepend(newIcon);
+    
     profileMenu.classList.add('hidden');
     load();
 
