@@ -12,8 +12,9 @@ export type Job = {
     link: string;
     created: Date;
     updated: Date;
-    viewed?: boolean;
+    viewed: boolean;
     stale: boolean;
+    mode: string;
 };
 
 const DATA = path.resolve('./data/jobs.json');
@@ -39,36 +40,25 @@ async function manageList<T>(
     return data;
 }
 
-async function migrate() {
-    const data = await store.get('ignored-jobs', { type: 'json' });
-    if (!data) {
-        console.log('Migration already done. ignored-jobs does not exist');
-        return;
-    }
-    await store.setJSON('ignored', data.map((job: Job) => job.id));
-    console.log("Migrating 'ignored-jobs' to 'ignored'");
-    await store.delete('ignored-jobs');
-}
-
-
-export async function readJobs(): Promise<Job[]> {
-    await migrate();
-
+export async function readJobs(profile: string): Promise<Job[]> {
     const [ignored, viewed, applied] = await Promise.all([
         manageList('ignored'), manageList('viewed'), manageList('applied')
     ])
 
-    return baseJobs
-        .filter(job => !ignored.includes(job.id))
+    const jobs = baseJobs
+        .filter(job => !ignored.includes(job.id) && job.mode == profile)
         .map(job => ({
+            ...job,
             "viewed": viewed.includes(job.id),
             "applied": applied.includes(job.id),
-            ...job,
             "created": new Date(job.created),
             "updated": new Date(job.updated),
         }))
         .filter(job => !job.stale || job.applied)
         .sort((a, b) => b.created.getTime() - a.created.getTime());
+    console.log(`Found ${jobs.length} jobs to display`);
+
+    return jobs;
 }
 
 

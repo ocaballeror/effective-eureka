@@ -187,7 +187,7 @@ header img {
 
 #toast-container {
   position: fixed;
-  top: 1rem;
+  bottom: 1rem;
   right: 1rem;
   display: flex;
   flex-direction: column;
@@ -206,6 +206,31 @@ header img {
   transition: opacity .3s ease, transform .3s ease;
   font-size: 1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.toast-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.toast-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.toast-close span {
+    font-size: 18px;
 }
 
 .toast.show {
@@ -386,4 +411,81 @@ input:checked + .slider:before {
 .filter-dropdown:hover {
     background-color: var(--primary);
     color: #fff;
+}
+
+/* Profile Switcher Styles */
+.profile-switcher {
+    position: relative;
+    margin-left: auto;
+    padding: 0 10px;
+}
+
+.profile-button {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.profile-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-button span {
+    color: white;
+    font-size: 24px;
+}
+
+.profile-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 8px 0;
+    min-width: 150px;
+    z-index: 1000;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.profile-menu.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+.profile-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 14px;
+    text-align: left;
+}
+
+.profile-option:hover {
+    background-color: var(--bg);
+}
+
+.profile-option.active {
+    background-color: var(--primary);
+    color: white;
+}
+
+.profile-option span {
+    font-size: 20px;
 }

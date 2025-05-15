@@ -1,5 +1,7 @@
 let filterTimer;
 let jobs = [], filtered = [];
+let currentProfile = 'pm';
+
 const listEl = document.getElementById('list'),
     detailsEl = document.getElementById('details'),
     searchEl = document.getElementById('search'),
@@ -8,34 +10,47 @@ const listEl = document.getElementById('list'),
     confirmOverlay = document.getElementById('confirm-overlay'),
     confirmMessageEl = document.getElementById('confirm-message'),
     confirmOkBtn = document.getElementById('confirm-ok'),
-    confirmCancelBtn = document.getElementById('confirm-cancel');
+    confirmCancelBtn = document.getElementById('confirm-cancel'),
+    profileBtn = document.getElementById('profile-btn'),
+    profileMenu = document.getElementById('profile-menu'),
+    viewedDropdown = document.getElementById('viewed-dropdown'),
+    appliedDropdown = document.getElementById('applied-dropdown'),
+    locationDropdown = document.getElementById('location-dropdown');
 
 let appliedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 let viewedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 let locationState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 
 const endpoints = {
-    list: () => `/api/job`,
-    view: id => `/api/job/${id}/view`,
-    unview: id => `/api/job/${id}/unview`,
-    apply: id => `/api/job/${id}/apply`,
-    unapply: id => `/api/job/${id}/unapply`,
-    delete: id => `/api/job/${id}`,
+    list: (profile) => `/api/job?profile=${profile}`,
+    view: (id) => `/api/job/${id}/view`,
+    unview: (id) => `/api/job/${id}/unview`,
+    apply: (id) => `/api/job/${id}/apply`,
+    unapply: (id) => `/api/job/${id}/unapply`,
+    delete: (id) => `/api/job/${id}`,
 };
 
 
-function showToast(title, body = '', duration = 10000) {
+function showToast(title, body = '', duration = 8000) {
     const t = document.createElement('div');
     t.className = 'toast';
     t.innerHTML =
+        `<button class="toast-close"><span class="material-symbols-outlined">close</span></button>` +
         `<div class="toast-title">${title}</div>` +
         (body ? `<div class="toast-body">${body}</div>` : '');
-    toastContainer.append(t);
-    requestAnimationFrame(() => t.classList.add('show'));
-    setTimeout(() => {
+    
+    const closeToast = () => {
         t.classList.remove('show');
         t.addEventListener('transitionend', () => t.remove(), { once: true });
-    }, duration);
+    };
+    
+    t.querySelector('.toast-close').addEventListener('click', closeToast);
+    
+    toastContainer.append(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    if (duration > 0) {
+        setTimeout(closeToast, duration);
+    }
 }
 
 function showConfirm(message) {
@@ -66,27 +81,34 @@ async function api(path, opts = {}) {
 }
 
 async function markViewed(el, job, cycle = false) {
-    if (el.classList.contains('viewed')) {
-        if (cycle) {
-            console.log("marking unviewed");
-            await api(endpoints.unview(job.id));
-            el.querySelector('.view-btn span').textContent = 'visibility';
-            job.viewed = false;
-            el.classList.remove('viewed');
+    if (!el || !job) return;
+    
+    try {
+        if (el.classList.contains('viewed')) {
+            if (cycle) {
+                await api(endpoints.unview(job.id));
+                el.querySelector('.view-btn span').textContent = 'visibility';
+                job.viewed = false;
+                el.classList.remove('viewed');
+            }
+        } else {
+            await api(endpoints.view(job.id));
+            el.querySelector('.view-btn span').textContent = 'visibility_off';
+            job.viewed = true;
+            el.classList.add('viewed');
         }
-    } else {
-        console.log("marking viewed");
-        await api(endpoints.view(job.id));
-        el.querySelector('.view-btn span').textContent = 'visibility_off';
-        job.viewed = true;
-        el.classList.add('viewed');
+    } catch (e) {
+        showToast('Failed to update viewed status :(');
     }
 }
+
 async function deleteJob(jobEl, job) {
-    if (!await (showConfirm('Delete this job?'))) return;
+    if (!await showConfirm('Delete this job?')) return;
     console.log("Deleting job", job.id);
+    
     const btn = jobEl.querySelector('.del');
     btn.disabled = true;
+    
     try {
         await api(endpoints.delete(job.id), { method: 'DELETE' });
         jobs = jobs.filter(j => j.id !== job.id);
@@ -103,15 +125,19 @@ async function deleteJob(jobEl, job) {
 async function toggleApply(jobEl, job) {
     const applied = jobEl.querySelector('.apply-btn');
     applied.disabled = true;
+    
     try {
         applied.classList.add('clicked');
         setTimeout(() => applied.classList.remove('clicked'), 300);
 
-        await api(jobEl.classList.contains('applied') ? endpoints.unapply(job.id) : endpoints.apply(job.id));
+        await api(jobEl.classList.contains('applied') 
+            ? endpoints.unapply(job.id) 
+            : endpoints.apply(job.id));
+            
         job.applied = !job.applied;
         jobEl.classList.toggle('applied', job.applied);
     } catch (e) {
-        showToast("Failed to mark job as applied :(");
+        showToast("Failed to update application status");
     } finally {
         applied.disabled = false;
     }
@@ -119,30 +145,40 @@ async function toggleApply(jobEl, job) {
 
 async function load() {
     try {
-        jobs = await api(endpoints.list());
+        jobs = await api(endpoints.list(currentProfile));
         filtered = jobs;
         applyFilter();
         selectFirstJob();
     } catch (err) {
         console.error("Failed to load jobs:", err);
-        detailsEl.textContent = "Couldn't load jobs. Try again later.";
+        detailsEl.innerHTML = "<div class='error'>Couldn't load jobs. Try again later.</div>";
     }
 }
 
 function getJobFromEl(jobItem) {
-    return jobs.find(j => j.id == jobItem.querySelector('.view-btn').dataset.id);
+    const id = jobItem.querySelector('.view-btn').dataset.id;
+    return jobs.find(j => j.id == id);
 }
 
 function selectFirstJob() {
-    if (filtered.length == 0) return;
+    if (filtered.length === 0) {
+        showDetails(null);
+        return;
+    }
+    
     const job = filtered[0];
     const jobEl = listEl.querySelector('.job-item');
-
-    selectJob(jobEl, job);
+    
+    if (jobEl) {
+        selectJob(jobEl, job);
+    }
 }
 
 function selectJob(jobEl, job) {
+    if (!jobEl || !job) return;
+    
     document.querySelectorAll('.job-item').forEach(x => x.classList.remove('active'));
+    jobEl.classList.add('active');
     markViewed(jobEl, job, false);
     showDetails(job);
 }
@@ -151,14 +187,17 @@ function createJobEl(job) {
     const el = document.createElement('div');
     el.className = 'job-item';
 
-    const actions = el.appendChild(document.createElement('div'));
+    const actions = document.createElement('div');
     actions.className = 'job-actions';
+    
     ['del', 'view-btn', 'apply-btn'].forEach(cls => {
         const btn = document.createElement('button');
         btn.className = cls;
         btn.dataset.id = job.id;
-        const icon = btn.appendChild(document.createElement('span'));
+        
+        const icon = document.createElement('span');
         icon.className = 'material-symbols-outlined';
+        
         if (cls === 'del') {
             icon.textContent = 'close';
         } else if (cls === 'view-btn') {
@@ -167,26 +206,44 @@ function createJobEl(job) {
             icon.textContent = 'outgoing_mail';
         }
 
+        btn.appendChild(icon);
         actions.appendChild(btn);
     });
 
-    const content = el.appendChild(document.createElement('div'));
+    el.appendChild(actions);
+
+    const content = document.createElement('div');
     content.className = 'job-content';
     content.innerHTML = `<h3>${job.title}</h3>
                        <div class="meta">${job.company} · ${job.location}</div>`;
+    
+    el.appendChild(content);
+    
     if (job.viewed) el.classList.add('viewed');
     if (job.applied) el.classList.add('applied');
+    
     return el;
 }
 
 function renderList() {
     listEl.innerHTML = '';
+    
+    if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="no-results">No jobs found</div>';
+        return;
+    }
+    
     const frag = document.createDocumentFragment();
     filtered.forEach(job => frag.appendChild(createJobEl(job)));
     listEl.appendChild(frag);
 }
 
 function showDetails(job) {
+    if (!job) {
+        detailsEl.innerHTML = '<em>Select a job…</em>';
+        return;
+    }
+    
     detailsEl.innerHTML = `
     <h2>${job.title}</h2>
     <div class="info">${job.company} · ${job.location}</div>
@@ -200,23 +257,33 @@ function showDetails(job) {
 
 function applyFilter() {
     const q = searchEl.value.toLowerCase();
-    const viewedState = parseInt(document.getElementById('viewed-dropdown').value, 10);
-    const appliedState = parseInt(document.getElementById('applied-dropdown').value, 10);
-    const locationState = parseInt(document.getElementById('location-dropdown').value, 10);
+    const viewedState = parseInt(viewedDropdown.value, 10);
+    const appliedState = parseInt(appliedDropdown.value, 10);
+    const locationState = parseInt(locationDropdown.value, 10);
 
     filtered = jobs.filter(j => {
         const matchesSearch = j.title.toLowerCase().includes(q) ||
             j.company.toLowerCase().includes(q) ||
             j.location.toLowerCase().includes(q) ||
             j.description.toLowerCase().includes(q);
-        const matchesViewed = viewedState === 0 || (viewedState === 1 && !j.viewed) || (viewedState === 2 && j.viewed);
-        const matchesApplied = appliedState === 0 || (appliedState === 1 && !j.applied) || (appliedState === 2 && j.applied);
+            
+        const matchesViewed = viewedState === 0 || 
+            (viewedState === 1 && !j.viewed) || 
+            (viewedState === 2 && j.viewed);
+            
+        const matchesApplied = appliedState === 0 || 
+            (appliedState === 1 && !j.applied) || 
+            (appliedState === 2 && j.applied);
+            
         const matchesLocation = locationState === 0 ||
-            (locationState === 1 && (j.location.toLowerCase().includes('berlin') || j.location.toLowerCase().includes('germany'))) ||
-            (locationState === 2 && (!j.location.toLowerCase().includes('berlin') && !j.location.toLowerCase().includes('germany')));
+            (locationState === 1 && (j.location.toLowerCase().includes('berlin') || 
+                                   j.location.toLowerCase().includes('germany'))) ||
+            (locationState === 2 && (!j.location.toLowerCase().includes('berlin') && 
+                                   !j.location.toLowerCase().includes('germany')));
 
         return matchesSearch && matchesViewed && matchesApplied && matchesLocation;
     });
+    
     renderList();
 }
 
@@ -225,6 +292,7 @@ listEl.addEventListener('click', async e => {
     if (!jobEl) return;
 
     const job = getJobFromEl(jobEl);
+    if (!job) return;
 
     if (e.target.closest('.del')) return await deleteJob(jobEl, job);
     if (e.target.closest('.apply-btn')) return await toggleApply(jobEl, job);
@@ -248,48 +316,38 @@ clearBtn.addEventListener('click', () => {
     searchEl.focus();
 });
 
-// document.getElementById('viewed-toggle').addEventListener('click', () => {
-//     viewedState = (viewedState + 1) % 3;
-//     const viewedToggle = document.querySelector('#viewed-toggle span:not(.material-symbols-outlined)');
-//     if (viewedState === 0) {
-//         viewedToggle.textContent = 'Show viewed';
-//     } else if (viewedState === 1) {
-//         viewedToggle.textContent = 'Hide viewed';
-//     } else {
-//         viewedToggle.textContent = 'Viewed only';
-//     }
-//     applyFilter();
-// });
+viewedDropdown.addEventListener('change', applyFilter);
+appliedDropdown.addEventListener('change', applyFilter);
+locationDropdown.addEventListener('change', applyFilter);
 
+function switchProfile(profile) {
+    if (!profile || profile === currentProfile) return;
+    
+    currentProfile = profile;
+    
+    document.querySelectorAll('.profile-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.profile === profile);
+    });
+    
+    profileMenu.classList.add('hidden');
+    load();
 
-// document.getElementById('applied-toggle').addEventListener('click', () => {
-//     appliedState = (appliedState + 1) % 3;
-//     const appliedToggle = document.querySelector('#applied-toggle span:not(.material-symbols-outlined)');
-//     if (appliedState === 0) {
-//         appliedToggle.textContent = 'Show Applied';
-//     } else if (appliedState === 1) {
-//         appliedToggle.textContent = 'Hide Applied';
-//     } else {
-//         appliedToggle.textContent = 'Applied Only';
-//     }
-//     applyFilter();
-// });
+    const nameMap = { pm: "Hüh", python: "Nerfleisch" };
+    showToast(`Switched to ${nameMap[profile]}`);
+}
 
-// document.getElementById('location-toggle').addEventListener('click', () => {
-//     locationState = (locationState + 1) % 3;
-//     const locationToggle = document.querySelector('#location-toggle span:not(.material-symbols-outlined)');
-//     if (locationState === 0) {
-//         locationToggle.textContent = 'Berlin/Spain';
-//     } else if (locationState === 1) {
-//         locationToggle.textContent = 'Berlin only';
-//     } else {
-//         locationToggle.textContent = 'Spain only';
-//     }
-//     applyFilter();
-// });
+profileBtn.addEventListener('click', () => {
+    profileMenu.classList.toggle('hidden');
+});
 
-document.getElementById('viewed-dropdown').addEventListener('change', applyFilter);
-document.getElementById('applied-dropdown').addEventListener('change', applyFilter);
-document.getElementById('location-dropdown').addEventListener('change', applyFilter);
+document.querySelectorAll('.profile-option').forEach(btn => {
+    btn.addEventListener('click', () => switchProfile(btn.dataset.profile));
+});
+
+document.addEventListener('click', (e) => {
+    if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+        profileMenu.classList.add('hidden');
+    }
+});
 
 load();
