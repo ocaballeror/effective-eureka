@@ -1,6 +1,6 @@
 let filterTimer;
 let jobs = [], filtered = [];
-let currentProfile = 'pm';
+let currentProfile = localStorage.getItem('selectedProfile') || 'pm';
 
 const listEl = document.getElementById('list'),
     detailsEl = document.getElementById('details'),
@@ -15,7 +15,8 @@ const listEl = document.getElementById('list'),
     profileMenu = document.getElementById('profile-menu'),
     viewedDropdown = document.getElementById('viewed-dropdown'),
     appliedDropdown = document.getElementById('applied-dropdown'),
-    locationDropdown = document.getElementById('location-dropdown');
+    locationDropdown = document.getElementById('location-dropdown'),
+    jobsCountEl = document.getElementById('jobs-count');
 
 let appliedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 let viewedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
@@ -38,14 +39,14 @@ function showToast(title, body = '', duration = 8000) {
         `<button class="toast-close"><span class="material-symbols-outlined">close</span></button>` +
         `<div class="toast-title">${title}</div>` +
         (body ? `<div class="toast-body">${body}</div>` : '');
-    
+
     const closeToast = () => {
         t.classList.remove('show');
         t.addEventListener('transitionend', () => t.remove(), { once: true });
     };
-    
+
     t.querySelector('.toast-close').addEventListener('click', closeToast);
-    
+
     toastContainer.append(t);
     requestAnimationFrame(() => t.classList.add('show'));
     if (duration > 0) {
@@ -82,7 +83,7 @@ async function api(path, opts = {}) {
 
 async function markViewed(el, job, cycle = false) {
     if (!el || !job) return;
-    
+
     try {
         if (el.classList.contains('viewed')) {
             if (cycle) {
@@ -105,10 +106,10 @@ async function markViewed(el, job, cycle = false) {
 async function deleteJob(jobEl, job) {
     if (!await showConfirm('Delete this job?')) return;
     console.log("Deleting job", job.id);
-    
+
     const btn = jobEl.querySelector('.del');
     btn.disabled = true;
-    
+
     try {
         await api(endpoints.delete(job.id), { method: 'DELETE' });
         jobs = jobs.filter(j => j.id !== job.id);
@@ -125,15 +126,15 @@ async function deleteJob(jobEl, job) {
 async function toggleApply(jobEl, job) {
     const applied = jobEl.querySelector('.apply-btn');
     applied.disabled = true;
-    
+
     try {
         applied.classList.add('clicked');
         setTimeout(() => applied.classList.remove('clicked'), 300);
 
-        await api(jobEl.classList.contains('applied') 
-            ? endpoints.unapply(job.id) 
+        await api(jobEl.classList.contains('applied')
+            ? endpoints.unapply(job.id)
             : endpoints.apply(job.id));
-            
+
         job.applied = !job.applied;
         jobEl.classList.toggle('applied', job.applied);
     } catch (e) {
@@ -148,10 +149,12 @@ async function load() {
         jobs = await api(endpoints.list(currentProfile));
         filtered = jobs;
         applyFilter();
+        updateJobsCount();
         selectFirstJob();
     } catch (err) {
         console.error("Failed to load jobs:", err);
         detailsEl.innerHTML = "<div class='error'>Couldn't load jobs. Try again later.</div>";
+        jobsCountEl.textContent = "Showing 0 jobs";
     }
 }
 
@@ -165,10 +168,10 @@ function selectFirstJob() {
         showDetails(null);
         return;
     }
-    
+
     const job = filtered[0];
     const jobEl = listEl.querySelector('.job-item');
-    
+
     if (jobEl) {
         selectJob(jobEl, job);
     }
@@ -176,7 +179,7 @@ function selectFirstJob() {
 
 function selectJob(jobEl, job) {
     if (!jobEl || !job) return;
-    
+
     document.querySelectorAll('.job-item').forEach(x => x.classList.remove('active'));
     jobEl.classList.add('active');
     markViewed(jobEl, job, false);
@@ -189,15 +192,15 @@ function createJobEl(job) {
 
     const actions = document.createElement('div');
     actions.className = 'job-actions';
-    
+
     ['del', 'view-btn', 'apply-btn'].forEach(cls => {
         const btn = document.createElement('button');
         btn.className = cls;
         btn.dataset.id = job.id;
-        
+
         const icon = document.createElement('span');
         icon.className = 'material-symbols-outlined';
-        
+
         if (cls === 'del') {
             icon.textContent = 'close';
         } else if (cls === 'view-btn') {
@@ -216,17 +219,20 @@ function createJobEl(job) {
     content.className = 'job-content';
     content.innerHTML = `<h3>${job.title}</h3>
                        <div class="meta">${job.company} · ${job.location}</div>`;
-    
+
     el.appendChild(content);
-    
+
     if (job.viewed) el.classList.add('viewed');
     if (job.applied) el.classList.add('applied');
-    
+
     return el;
 }
 
 function renderList() {
     listEl.innerHTML = '';
+    
+    // Update the job count display
+    updateJobsCount();
     
     if (filtered.length === 0) {
         listEl.innerHTML = '<div class="no-results">No jobs found</div>';
@@ -238,12 +244,23 @@ function renderList() {
     listEl.appendChild(frag);
 }
 
+function updateJobsCount() {
+    const totalJobs = jobs.length;
+    const filteredJobs = filtered.length;
+    
+    if (totalJobs === filteredJobs) {
+        jobsCountEl.textContent = `Showing all ${totalJobs} jobs`;
+    } else {
+        jobsCountEl.textContent = `Showing ${filteredJobs} of ${totalJobs} jobs`;
+    }
+}
+
 function showDetails(job) {
     if (!job) {
         detailsEl.innerHTML = '<em>Select a job…</em>';
         return;
     }
-    
+
     detailsEl.innerHTML = `
     <h2>${job.title}</h2>
     <div class="info">${job.company} · ${job.location}</div>
@@ -261,29 +278,39 @@ function applyFilter() {
     const appliedState = parseInt(appliedDropdown.value, 10);
     const locationState = parseInt(locationDropdown.value, 10);
 
+    localStorage.setItem('viewedFilter', viewedDropdown.value);
+    localStorage.setItem('appliedFilter', appliedDropdown.value);
+    localStorage.setItem('locationFilter', locationDropdown.value);
+
     filtered = jobs.filter(j => {
         const matchesSearch = j.title.toLowerCase().includes(q) ||
             j.company.toLowerCase().includes(q) ||
             j.location.toLowerCase().includes(q) ||
             j.description.toLowerCase().includes(q);
-            
-        const matchesViewed = viewedState === 0 || 
-            (viewedState === 1 && !j.viewed) || 
+
+        const matchesViewed = viewedState === 0 ||
+            (viewedState === 1 && !j.viewed) ||
             (viewedState === 2 && j.viewed);
-            
-        const matchesApplied = appliedState === 0 || 
-            (appliedState === 1 && !j.applied) || 
+
+        const matchesApplied = appliedState === 0 ||
+            (appliedState === 1 && !j.applied) ||
             (appliedState === 2 && j.applied);
-            
-        const matchesLocation = locationState === 0 ||
-            (locationState === 1 && (j.location.toLowerCase().includes('berlin') || 
-                                   j.location.toLowerCase().includes('germany'))) ||
-            (locationState === 2 && (!j.location.toLowerCase().includes('berlin') && 
-                                   !j.location.toLowerCase().includes('germany')));
+
+        let matchesLocation = true;
+        if (locationState !== 0) {
+            const location = j.location.toLowerCase();
+            if (locationState === 1) {
+                matchesLocation = location.includes('ireland');
+            } else if (locationState === 2) {
+                matchesLocation = location.includes('germany');
+            } else if (locationState === 3) {
+                matchesLocation = location.includes('spain') || location.includes('madrid') || location.includes('barcelona');
+            }
+        }
 
         return matchesSearch && matchesViewed && matchesApplied && matchesLocation;
     });
-    
+
     renderList();
 }
 
@@ -306,6 +333,7 @@ searchEl.addEventListener('input', () => {
     filterTimer = setTimeout(() => {
         applyFilter();
         clearBtn.style.display = searchEl.value ? 'block' : 'none';
+        localStorage.setItem('searchQuery', searchEl.value);
     }, 150);
 });
 
@@ -313,6 +341,7 @@ clearBtn.addEventListener('click', () => {
     searchEl.value = '';
     applyFilter();
     clearBtn.style.display = 'none';
+    localStorage.removeItem('searchQuery');
     searchEl.focus();
 });
 
@@ -322,24 +351,15 @@ locationDropdown.addEventListener('change', applyFilter);
 
 function switchProfile(profile) {
     if (!profile || profile === currentProfile) return;
-    
+
     currentProfile = profile;
-    
+    localStorage.setItem('selectedProfile', profile);
+
+    // Update profile menu selection
     document.querySelectorAll('.profile-option').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.profile === profile);
     });
-    
-    const profileIconClass = profile === 'pm' ? 'top-half' : 'bottom-half';
-    const currentIcon = profileBtn.querySelector('span, .profile-image');
-    
-    if (currentIcon) {
-        currentIcon.remove();
-    }
-    
-    const newIcon = document.createElement('div');
-    newIcon.className = `profile-image ${profileIconClass}`;
-    profileBtn.prepend(newIcon);
-    
+
     profileMenu.classList.add('hidden');
     load();
 
@@ -361,4 +381,39 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Initialize the correct profile and filters on page load
+function initializeProfile() {
+    const savedProfile = localStorage.getItem('selectedProfile');
+    if (savedProfile) {
+        // Set the active class on the correct profile option
+        document.querySelectorAll('.profile-option').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.profile === savedProfile);
+        });
+    }
+
+    // Restore filter selections
+    const viewedFilter = localStorage.getItem('viewedFilter');
+    if (viewedFilter) {
+        viewedDropdown.value = viewedFilter;
+    }
+
+    const appliedFilter = localStorage.getItem('appliedFilter');
+    if (appliedFilter) {
+        appliedDropdown.value = appliedFilter;
+    }
+
+    const locationFilter = localStorage.getItem('locationFilter');
+    if (locationFilter) {
+        locationDropdown.value = locationFilter;
+    }
+
+    // Restore search query
+    const searchQuery = localStorage.getItem('searchQuery');
+    if (searchQuery) {
+        searchEl.value = searchQuery;
+        clearBtn.style.display = 'block';
+    }
+}
+
+initializeProfile();
 load();

@@ -84,7 +84,6 @@ header img {
     transition:box-shadow .2s;
     position:relative;
     line-height: 1.5;
-    justify-content: space-evenly;
 }
 .job-item:hover { box-shadow:0 4px 12px rgba(0,0,0,0.1); }
 .job-item.active { border-color:var(--primary); }
@@ -411,6 +410,15 @@ input:checked + .slider:before {
 .filter-dropdown:hover {
     background-color: var(--primary);
     color: #fff;
+}
+
+.jobs-count {
+    padding: 10px 15px;
+    background-color: var(--card);
+    font-size: 14px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
 }
 
 /* Profile Switcher Styles */
