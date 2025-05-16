@@ -17,9 +17,9 @@ body,html {
 
 header {
     background:#0077b7;
-    padding: 10px 10px 0px 10px;
+    padding: 8px 10px 0px 10px;
     display:flex;
-    align-items:flex-start;
+    align-items:center;
     box-shadow:0 1px 3px rgba(0,0,0,0.1);
 }
 header img {
@@ -36,15 +36,17 @@ header img {
 
 .search-container {
     position: relative;
+    flex: 1;
+    max-width: 600px;
 }
 #search {
     flex:1;
-    padding:10px 30px 10px 10px;
+    padding:8px 30px 8px 10px;
     margin-left: 15px;
     border:1px solid var(--border);
     border-radius:4px;
     font-size:14px;
-    width: 400px;
+    width: 100%;
     max-width: 100%;
 }
 #clear-btn {
@@ -67,13 +69,15 @@ header img {
     height: calc(100vh - 52px); /* Adjust based on your header height */
 }
 #list-container {
-    width: 440px;
+    width: 340px;
+    min-width: 280px;
     height: 100%;
     overflow-y: auto;
+    flex-shrink: 0;
 }
 #list {
-    overflow-y:auto;
-    padding:10px;
+    overflow-y: auto;
+    padding: 8px;
 }
 .job-item {
     background:var(--card);
@@ -112,14 +116,14 @@ header img {
 }
 .job-actions button {
     border:1px;
-    border-radius:5px;
+    border-radius:4px;
     border-color: transparent;
     background:transparent;
     cursor:pointer;
     color:#000;
     margin:0px;
     transition: transform 0.15s ease, background-color 0.3s ease;
-    padding: 6px;
+    padding: 4px;
     border-radius: 4px;
 }
 .job-actions button:active {
@@ -155,12 +159,12 @@ header img {
 
 #details {
     flex: 1;
-    padding: 20px;
+    padding: 15px;
     overflow-y: auto;
     background: var(--card);
     border-radius: 6px;
     border: 1px solid var(--border);
-    margin: 0px 20px 10px 0px;
+    margin: 0px 15px 10px 0px;
     font-size: large;
 }
 #details .info {
@@ -303,9 +307,11 @@ header img {
 .filter-container {
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 8px;
     background: var(--card);
     border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
 .filter-container input[type="checkbox"] {
@@ -399,12 +405,14 @@ input:checked + .slider:before {
     background-color: var(--card);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 8px 12px;
-    margin-right: 15px;
+    padding: 6px 8px;
+    margin-right: 0;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text);
     transition: background-color 0.3s;
+    flex: 1;
+    min-width: 110px;
 }
 
 .filter-dropdown:hover {
@@ -413,9 +421,9 @@ input:checked + .slider:before {
 }
 
 .jobs-count {
-    padding: 10px 15px;
+    padding: 8px 10px;
     background-color: var(--card);
-    font-size: 14px;
+    font-size: 13px;
     color: var(--muted);
     border-bottom: 1px solid var(--border);
     font-weight: 500;
