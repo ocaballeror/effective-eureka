@@ -69,7 +69,7 @@ header img {
     height: calc(100vh - 52px); /* Adjust based on your header height */
 }
 #list-container {
-    width: 340px;
+    width: 400px;
     min-width: 280px;
     height: 100%;
     overflow-y: auto;
@@ -306,12 +306,11 @@ header img {
 
 .filter-container {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     padding: 8px;
     background: var(--card);
     border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
 }
 
 .filter-container input[type="checkbox"] {
@@ -527,4 +526,91 @@ input:checked + .slider:before {
 
 .profile-image.bottom-half {
     background-position: 0 -16px;
+}
+
+/* Custom Dropdown Styles */
+.custom-dropdown {
+    position: relative;
+    flex: 1;
+    min-width: 100px;
+    z-index: 100;
+}
+
+.dropdown-button {
+    width: 100%;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+}
+
+.dropdown-button:hover, 
+.custom-dropdown.active .dropdown-button {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.dropdown-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-icon {
+    font-size: 18px !important;
+    transition: transform 0.2s ease;
+}
+
+.custom-dropdown.active .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 200;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.dropdown-menu.hidden {
+    display: none;
+}
+
+.dropdown-item {
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg);
+}
+
+.dropdown-item.active {
+    background-color: rgba(10, 102, 194, 0.1);
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.filter-dropdown.hidden {
+    display: none;
 }

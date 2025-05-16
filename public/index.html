@@ -36,22 +36,58 @@
         <div id="app">
             <div id="list-container">
                 <div class="filter-container">
-                    <select id="viewed-dropdown" class="filter-dropdown">
-                        <option value="0">Show Viewed</option>
-                        <option value="1">Hide Viewed</option>
-                        <option value="2">Viewed Only</option>
-                    </select>
-                    <select id="applied-dropdown" class="filter-dropdown">
-                        <option value="0">Show Applied</option>
-                        <option value="1">Hide Applied</option>
-                        <option value="2">Applied Only</option>
-                    </select>
-                    <select id="location-dropdown" class="filter-dropdown">
-                        <option value="0">All Locations</option>
-                        <option value="1">Remote (Ireland)</option>
-                        <option value="2">Remote (Germany)</option>
-                        <option value="3">Spain</option>
-                    </select>
+                    <div class="custom-dropdown" id="viewed-dropdown-container">
+                        <button class="dropdown-button">
+                            <span class="dropdown-text">Show Viewed</span>
+                            <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+                        </button>
+                        <div class="dropdown-menu hidden">
+                            <div class="dropdown-item" data-value="0">Show Viewed</div>
+                            <div class="dropdown-item" data-value="1">Hide Viewed</div>
+                            <div class="dropdown-item" data-value="2">Viewed Only</div>
+                        </div>
+                        <select id="viewed-dropdown" class="filter-dropdown hidden">
+                            <option value="0">Show Viewed</option>
+                            <option value="1">Hide Viewed</option>
+                            <option value="2">Viewed Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="custom-dropdown" id="applied-dropdown-container">
+                        <button class="dropdown-button">
+                            <span class="dropdown-text">Show Applied</span>
+                            <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+                        </button>
+                        <div class="dropdown-menu hidden">
+                            <div class="dropdown-item" data-value="0">Show Applied</div>
+                            <div class="dropdown-item" data-value="1">Hide Applied</div>
+                            <div class="dropdown-item" data-value="2">Applied Only</div>
+                        </div>
+                        <select id="applied-dropdown" class="filter-dropdown hidden">
+                            <option value="0">Show Applied</option>
+                            <option value="1">Hide Applied</option>
+                            <option value="2">Applied Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="custom-dropdown" id="location-dropdown-container">
+                        <button class="dropdown-button">
+                            <span class="dropdown-text">All Locations</span>
+                            <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+                        </button>
+                        <div class="dropdown-menu hidden">
+                            <div class="dropdown-item" data-value="0">All Locations</div>
+                            <div class="dropdown-item" data-value="1">Remote (Ireland)</div>
+                            <div class="dropdown-item" data-value="2">Remote (Germany)</div>
+                            <div class="dropdown-item" data-value="3">Spain</div>
+                        </div>
+                        <select id="location-dropdown" class="filter-dropdown hidden">
+                            <option value="0">All Locations</option>
+                            <option value="1">Remote (Ireland)</option>
+                            <option value="2">Remote (Germany)</option>
+                            <option value="3">Spain</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="jobs-count" class="jobs-count">Showing 0 jobs</div>
                 <div id="list"></div>

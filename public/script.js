@@ -16,6 +16,9 @@ const listEl = document.getElementById('list'),
     viewedDropdown = document.getElementById('viewed-dropdown'),
     appliedDropdown = document.getElementById('applied-dropdown'),
     locationDropdown = document.getElementById('location-dropdown'),
+    viewedDropdownContainer = document.getElementById('viewed-dropdown-container'),
+    appliedDropdownContainer = document.getElementById('applied-dropdown-container'),
+    locationDropdownContainer = document.getElementById('location-dropdown-container'),
     jobsCountEl = document.getElementById('jobs-count');
 
 let appliedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
@@ -381,6 +384,87 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Initialize custom dropdowns
+function initializeCustomDropdowns() {
+    // Setup each dropdown
+    setupCustomDropdown(viewedDropdownContainer, viewedDropdown);
+    setupCustomDropdown(appliedDropdownContainer, appliedDropdown);
+    setupCustomDropdown(locationDropdownContainer, locationDropdown);
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        const dropdowns = document.querySelectorAll('.custom-dropdown');
+        dropdowns.forEach(dropdown => {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+                dropdown.querySelector('.dropdown-menu').classList.add('hidden');
+            }
+        });
+    });
+}
+
+function setupCustomDropdown(container, selectElement) {
+    const button = container.querySelector('.dropdown-button');
+    const menu = container.querySelector('.dropdown-menu');
+    const items = container.querySelectorAll('.dropdown-item');
+    const text = container.querySelector('.dropdown-text');
+    
+    // Set initial active state
+    updateDropdownActiveItem(container, selectElement.value);
+    
+    // Toggle menu on button click
+    button.addEventListener('click', () => {
+        const isActive = container.classList.contains('active');
+        
+        // Close all dropdowns first
+        document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
+            dropdown.classList.remove('active');
+            dropdown.querySelector('.dropdown-menu').classList.add('hidden');
+        });
+        
+        // Toggle current dropdown
+        if (!isActive) {
+            container.classList.add('active');
+            menu.classList.remove('hidden');
+        }
+    });
+    
+    // Handle item selection
+    items.forEach(item => {
+        item.addEventListener('click', () => {
+            const value = item.dataset.value;
+            text.textContent = item.textContent;
+            
+            // Update the hidden select element
+            selectElement.value = value;
+            
+            // Dispatch change event to trigger any existing listeners
+            selectElement.dispatchEvent(new Event('change'));
+            
+            // Update active state
+            updateDropdownActiveItem(container, value);
+            
+            // Hide menu
+            container.classList.remove('active');
+            menu.classList.add('hidden');
+        });
+    });
+}
+
+function updateDropdownActiveItem(container, value) {
+    const items = container.querySelectorAll('.dropdown-item');
+    const text = container.querySelector('.dropdown-text');
+    
+    items.forEach(item => {
+        if (item.dataset.value === value) {
+            item.classList.add('active');
+            text.textContent = item.textContent;
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
 // Initialize the correct profile and filters on page load
 function initializeProfile() {
     const savedProfile = localStorage.getItem('selectedProfile');
@@ -390,23 +474,26 @@ function initializeProfile() {
             btn.classList.toggle('active', btn.dataset.profile === savedProfile);
         });
     }
-
+    
     // Restore filter selections
     const viewedFilter = localStorage.getItem('viewedFilter');
     if (viewedFilter) {
         viewedDropdown.value = viewedFilter;
+        updateDropdownActiveItem(viewedDropdownContainer, viewedFilter);
     }
-
+    
     const appliedFilter = localStorage.getItem('appliedFilter');
     if (appliedFilter) {
         appliedDropdown.value = appliedFilter;
+        updateDropdownActiveItem(appliedDropdownContainer, appliedFilter);
     }
-
+    
     const locationFilter = localStorage.getItem('locationFilter');
     if (locationFilter) {
         locationDropdown.value = locationFilter;
+        updateDropdownActiveItem(locationDropdownContainer, locationFilter);
     }
-
+    
     // Restore search query
     const searchQuery = localStorage.getItem('searchQuery');
     if (searchQuery) {
@@ -416,4 +503,5 @@ function initializeProfile() {
 }
 
 initializeProfile();
+initializeCustomDropdowns();
 load();
