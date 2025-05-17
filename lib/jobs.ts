@@ -49,6 +49,8 @@ export async function readJobs(profile: string): Promise<Job[]> {
         .filter(job => !ignored.includes(job.id) && job.mode == profile)
         .map(job => ({
             ...job,
+            "html": job.html? job.html : job.description,
+            "description": "",
             "viewed": viewed.includes(job.id),
             "applied": applied.includes(job.id),
             "created": new Date(job.created),
