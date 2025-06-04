@@ -611,6 +611,10 @@ input:checked + .slider:before {
     color: mediumseagreen;
     content: 'check_circle';
 }
+.job-status.unknown::before {
+    color: crimson;
+    content: 'question_mark';
+}
 .job-status.fail::before {
     color: crimson;
     content: 'cancel';

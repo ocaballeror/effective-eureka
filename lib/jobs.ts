@@ -12,10 +12,17 @@ export type Job = {
     link: string;
     created: Date;
     updated: Date;
+    applied: boolean;
     viewed: boolean;
     stale: boolean;
     mode: string;
 };
+
+type Validity = {
+    valid: boolean | null;
+    when: number;
+};
+
 
 const DATA = path.resolve('./data/jobs.json');
 const baseJobs: Job[] = JSON.parse(
@@ -23,22 +30,20 @@ const baseJobs: Job[] = JSON.parse(
     (key, value) => (key == 'created' || key == 'updated') ? new Date(value) : value
 );
 
-
-async function manageList<T>(
-    key: string,
-    callback?: (items: T[]) => void | Promise<void>
-): Promise<T[]> {
+async function migrate() {
     const store = getStore('jobs');
-    const data = ((await store.get(key, { type: 'json' })) || []) as T[];
-    console.log(`Found ${data.length} jobs at ${key}`)
-    if (callback) {
-        await callback(data);
-        console.log(`Updating list ${key} with ${data.length} items`);
-        await store.setJSON(key, data);
-    }
+    await Promise.all(
+        ['ignored', 'viewed', 'applied'].map(async key => {
+            const data = await store.get(key, { type: 'json' });
+            if (!Array.isArray(data)) return;
 
-    return data;
+            console.log('Migrating blob key', key);
+            await store.setJSON(key + '-old', data);
+            await store.setJSON(key, data.reduce((acc, val) => ({ ...acc, [val]: true }), {}));
+        })
+    );
 }
+
 
 export async function readJobs(profile: string): Promise<Job[]> {
     const [ignored, viewed, applied] = await Promise.all([
@@ -46,15 +51,15 @@ export async function readJobs(profile: string): Promise<Job[]> {
     ])
 
     const jobs = baseJobs
-        .filter(job => !ignored.includes(job.id) && job.mode == profile)
+        .filter(job => !ignored.hasOwnProperty(job.id) && job.mode == profile)
         .map(job => ({
             ...job,
-            "html": job.html? job.html : job.description,
+            "html": job.html || job.description,
             "description": "",
-            "viewed": viewed.includes(job.id),
-            "applied": applied.includes(job.id),
-            "created": new Date(job.created),
-            "updated": new Date(job.updated),
+            "viewed": job.id in viewed,
+            "applied": job.id in applied,
+            // "created": new Date(job.created),
+            // "updated": new Date(job.updated),
         }))
         .filter(job => !job.stale || job.applied)
         .sort((a, b) => b.created.getTime() - a.created.getTime());
@@ -63,10 +68,47 @@ export async function readJobs(profile: string): Promise<Job[]> {
     return jobs;
 }
 
+async function manageList<T>(
+    key: string,
+    callback?: (items: Record<string, T>) => void | Promise<void>
+): Promise<Record<string, T>> {
+    await migrate();
+    const store = getStore('jobs');
+    const data = (await store.get(key, { type: 'json' })) || {};
+    console.log(`Found ${Object.keys(data).length} jobs at ${key}`)
+    if (callback) {
+        await callback(data);
+        console.log(`Updating list ${key} with ${Object.keys(data).length} items: ${JSON.stringify(data)}`);
+        await store.setJSON(key, data);
+    }
 
-export async function verifyJob(id: string): Promise<boolean> {
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    return true;
+    return data;
+}
+
+export async function verifyJob(id: string): Promise<boolean | null | undefined> {
+    const job = baseJobs.find(j => j.id == id);
+    if (!job) return;
+
+    const verified = await manageList('verified', async (items: Record<string, Validity>) => {
+        const now = Date.now();
+        const record = items[id] || { valid: null, when: 0 };
+
+        if (record.when + 60000 < now) {
+            try {
+                const resp = await fetch(job.link);
+                const body = await resp.text();
+                items[id] = {
+                    valid: !body.includes('No longer accepting applications'),
+                    when: now
+                };
+            } catch (err) {
+                console.log(`Error checking linkedin job: ${err}`);
+                items[id] = record;
+            }
+        }
+    });
+
+    return verified[id].valid;
 }
 
 
@@ -76,10 +118,10 @@ async function toggle(
     shouldHave: boolean
 ): Promise<void> {
     await manageList(key, items => {
-        const has = items.includes(id)
-        if (shouldHave && !has) items.push(id)
-        if (!shouldHave && has) items.splice(items.indexOf(id), 1)
-    })
+        const has = id in items;
+        if (shouldHave && !has) items[id] = true;
+        if (!shouldHave && has) delete items[id];
+    });
 }
 
 export const ignoreJob = (id: string) => toggle('ignored', id, true)

@@ -82,7 +82,7 @@ function showConfirm(message) {
 }
 
 async function api(path, opts = {}) {
-    const res = await fetch(path, opts);
+    const res = await fetch(path, { signal: AbortSignal.timeout(10000), ...opts });
     if (!res.ok) throw new Error(res.statusText);
     if (opts.method === 'DELETE' || res.status === 204) return;
     return await res.json();
@@ -272,11 +272,12 @@ async function verifyJob(job) {
     try {
         const { active } = await api(endpoints.verify(job.id), { signal: verifyAbort.signal });
         statusEl.classList.remove('spinner');
-        statusEl.classList.add(active ? 'ok' : 'fail');
+        statusEl.classList.add(active === null ? 'unknown' : (active ? 'ok' : 'fail'));
     } catch (err) {
-        console.log(err);
         if (err.name !== 'AbortError') {
-            statusEl.innerHTML = '<span class="material-symbols-outlined fail" aria-label="Error"></span>';
+            console.log(err);
+            statusEl.classList.remove('spinner');
+            statusEl.classList.add('unknown');
         }
     }
 }
@@ -285,7 +286,7 @@ function showDetailsError(content) {
     detailsEl.classList.add('hidden');
     detailsErrorEl.classList.remove('hidden');
     detailsErrorEl.innerHTML = `<em>${content}</em>`;
-}
+};
 
 function showDetails(job) {
     if (!job) {
