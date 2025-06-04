@@ -64,6 +64,12 @@ export async function readJobs(profile: string): Promise<Job[]> {
 }
 
 
+export async function verifyJob(id: string): Promise<boolean> {
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    return true;
+}
+
+
 async function toggle(
     key: string,
     id: string,

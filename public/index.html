@@ -92,7 +92,21 @@
                 <div id="jobs-count" class="jobs-count">Showing 0 jobs</div>
                 <div id="list"></div>
             </div>
-            <div id="details"><em>Select a job…</em></div>
+            <div id="details-container">
+                <div id="details-error" class="error">
+                    <em>Select a job...</em>
+                </div>
+                <div id="job-details" class="hidden">
+                    <h2>Default job title</h2>
+                    <div class="info">Default job · Default company</div>
+                    <a href="" target="_blank" class="apply-btn">
+                        <img src="linkedin.svg" alt="LinkedIn logo">
+                        View on LinkedIn
+                    </a>
+                    <span class="job-status spinner material-symbols-outlined"></span>
+                    <div class="description">Default description</div>
+                </div>
+            </div>
         </div>
         <div id="toast-container"></div>
         <div id="confirm-overlay" class="hidden">

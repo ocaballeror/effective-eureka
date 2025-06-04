@@ -15,6 +15,11 @@ body,html {
     overflow:hidden;
 }
 
+.hidden {
+    display: none !important;
+    overflow-y: auto !important;
+}
+
 header {
     background:#0077b7;
     padding: 8px 10px 0px 10px;
@@ -157,7 +162,7 @@ header img {
     animation: pop 0.3s ease;
 }
 
-#details {
+#details-container {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
@@ -167,7 +172,7 @@ header img {
     margin: 0px 15px 10px 0px;
     font-size: large;
 }
-#details .info {
+#details-container .info {
     color:var(--muted);
     margin-bottom:10px;
     max-width: 1000px;
@@ -249,11 +254,6 @@ header img {
 .toast-body {
   line-height: 1.4;
 }
-
-#confirm-overlay.hidden {
-  display: none;
-}
-
 
 #confirm-overlay {
   position: fixed;
@@ -480,7 +480,6 @@ input:checked + .slider:before {
 .profile-menu.hidden {
     opacity: 0;
     transform: translateY(-10px);
-    pointer-events: none;
 }
 
 .profile-option {
@@ -590,10 +589,6 @@ input:checked + .slider:before {
     overflow-y: auto;
 }
 
-.dropdown-menu.hidden {
-    display: none;
-}
-
 .dropdown-item {
     padding: 6px 8px;
     cursor: pointer;
@@ -611,6 +606,22 @@ input:checked + .slider:before {
     font-weight: 500;
 }
 
-.filter-dropdown.hidden {
-    display: none;
+
+.job-status.ok::before {
+    color: mediumseagreen;
+    content: 'check_circle';
 }
+.job-status.fail::before {
+    color: crimson;
+    content: 'cancel';
+}
+.job-status.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ccc;
+    border-top-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

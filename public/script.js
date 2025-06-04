@@ -3,7 +3,8 @@ let jobs = [], filtered = [];
 let currentProfile = localStorage.getItem('selectedProfile') || 'pm';
 
 const listEl = document.getElementById('list'),
-    detailsEl = document.getElementById('details'),
+    detailsEl = document.getElementById('job-details'),
+    detailsErrorEl = document.getElementById('details-error'),
     searchEl = document.getElementById('search'),
     clearBtn = document.getElementById('clear-btn'),
     toastContainer = document.getElementById('toast-container'),
@@ -27,6 +28,7 @@ let locationState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 
 const endpoints = {
     list: (profile) => `/api/job?profile=${profile}`,
+    verify: (id) => `/api/job/${id}/verify`,
     view: (id) => `/api/job/${id}/view`,
     unview: (id) => `/api/job/${id}/unview`,
     apply: (id) => `/api/job/${id}/apply`,
@@ -156,7 +158,8 @@ async function load() {
         selectFirstJob();
     } catch (err) {
         console.error("Failed to load jobs:", err);
-        detailsEl.innerHTML = "<div class='error'>Couldn't load jobs. Try again later.</div>";
+        showToast("Couldn't load jobs. Try again later.");
+        showDetailsError("Couldn't load jobs. Try again later.");
         jobsCountEl.textContent = "Showing 0 jobs";
     }
 }
@@ -233,15 +236,15 @@ function createJobEl(job) {
 
 function renderList() {
     listEl.innerHTML = '';
-    
+
     // Update the job count display
     updateJobsCount();
-    
+
     if (filtered.length === 0) {
         listEl.innerHTML = '<div class="no-results">No jobs found</div>';
         return;
     }
-    
+
     const frag = document.createDocumentFragment();
     filtered.forEach(job => frag.appendChild(createJobEl(job)));
     listEl.appendChild(frag);
@@ -250,7 +253,7 @@ function renderList() {
 function updateJobsCount() {
     const totalJobs = jobs.length;
     const filteredJobs = filtered.length;
-    
+
     if (totalJobs === filteredJobs) {
         jobsCountEl.textContent = `Showing all ${totalJobs} jobs`;
     } else {
@@ -258,21 +261,45 @@ function updateJobsCount() {
     }
 }
 
+async function verifyJob(job) {
+    const statusEl = document.querySelector('span.job-status');
+    statusEl.classList.add('spinner');
+    statusEl.classList.remove('ok');
+    statusEl.classList.remove('fail');
+
+    try {
+        const { active } = await api(endpoints.verify(job.id));
+        statusEl.classList.remove('spinner');
+        statusEl.classList.add(active ? 'ok' : 'fail');
+    } catch (err) {
+        console.log(err);
+        if (err.name !== 'AbortError') {
+            statusEl.innerHTML = '<span class="material-symbols-outlined fail" aria-label="Error"></span>';
+        }
+    }
+}
+
+function showDetailsError(content) {
+    detailsEl.classList.add('hidden');
+    detailsErrorEl.classList.remove('hidden');
+    detailsErrorEl.innerHTML = `<em>${content}</em>`;
+}
+
 function showDetails(job) {
     if (!job) {
-        detailsEl.innerHTML = '<em>Select a job…</em>';
+        showDetailsError('Select a job...');
         return;
     }
 
-    detailsEl.innerHTML = `
-    <h2>${job.title}</h2>
-    <div class="info">${job.company} · ${job.location}</div>
-    <a href="${job.link}" target="_blank" class="apply-btn">
-      <img src="linkedin.svg" alt="LinkedIn logo">
-      View on LinkedIn
-    </a>
-    <div class="description">${job.html || job.description}</div>
-  `;
+    detailsEl.classList.remove('hidden');
+    detailsErrorEl.classList.add('hidden');
+
+    detailsEl.querySelector('h2').innerText = job.title;
+    detailsEl.querySelector('div.info').innerText = `${job.company} · ${job.location}`;
+    detailsEl.querySelector('a.apply-btn').href = job.link;
+    detailsEl.querySelector('div.description').innerHTML = job.html || job.description;
+
+    verifyJob(job);
 }
 
 function applyFilter() {
@@ -390,7 +417,7 @@ function initializeCustomDropdowns() {
     setupCustomDropdown(viewedDropdownContainer, viewedDropdown);
     setupCustomDropdown(appliedDropdownContainer, appliedDropdown);
     setupCustomDropdown(locationDropdownContainer, locationDropdown);
-    
+
     // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
         const dropdowns = document.querySelectorAll('.custom-dropdown');
@@ -408,42 +435,42 @@ function setupCustomDropdown(container, selectElement) {
     const menu = container.querySelector('.dropdown-menu');
     const items = container.querySelectorAll('.dropdown-item');
     const text = container.querySelector('.dropdown-text');
-    
+
     // Set initial active state
     updateDropdownActiveItem(container, selectElement.value);
-    
+
     // Toggle menu on button click
     button.addEventListener('click', () => {
         const isActive = container.classList.contains('active');
-        
+
         // Close all dropdowns first
         document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
             dropdown.classList.remove('active');
             dropdown.querySelector('.dropdown-menu').classList.add('hidden');
         });
-        
+
         // Toggle current dropdown
         if (!isActive) {
             container.classList.add('active');
             menu.classList.remove('hidden');
         }
     });
-    
+
     // Handle item selection
     items.forEach(item => {
         item.addEventListener('click', () => {
             const value = item.dataset.value;
             text.textContent = item.textContent;
-            
+
             // Update the hidden select element
             selectElement.value = value;
-            
+
             // Dispatch change event to trigger any existing listeners
             selectElement.dispatchEvent(new Event('change'));
-            
+
             // Update active state
             updateDropdownActiveItem(container, value);
-            
+
             // Hide menu
             container.classList.remove('active');
             menu.classList.add('hidden');
@@ -454,7 +481,7 @@ function setupCustomDropdown(container, selectElement) {
 function updateDropdownActiveItem(container, value) {
     const items = container.querySelectorAll('.dropdown-item');
     const text = container.querySelector('.dropdown-text');
-    
+
     items.forEach(item => {
         if (item.dataset.value === value) {
             item.classList.add('active');
@@ -474,26 +501,26 @@ function initializeProfile() {
             btn.classList.toggle('active', btn.dataset.profile === savedProfile);
         });
     }
-    
+
     // Restore filter selections
     const viewedFilter = localStorage.getItem('viewedFilter');
     if (viewedFilter) {
         viewedDropdown.value = viewedFilter;
         updateDropdownActiveItem(viewedDropdownContainer, viewedFilter);
     }
-    
+
     const appliedFilter = localStorage.getItem('appliedFilter');
     if (appliedFilter) {
         appliedDropdown.value = appliedFilter;
         updateDropdownActiveItem(appliedDropdownContainer, appliedFilter);
     }
-    
+
     const locationFilter = localStorage.getItem('locationFilter');
     if (locationFilter) {
         locationDropdown.value = locationFilter;
         updateDropdownActiveItem(locationDropdownContainer, locationFilter);
     }
-    
+
     // Restore search query
     const searchQuery = localStorage.getItem('searchQuery');
     if (searchQuery) {
