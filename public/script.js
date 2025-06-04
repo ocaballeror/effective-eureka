@@ -2,6 +2,8 @@ let filterTimer;
 let jobs = [], filtered = [];
 let currentProfile = localStorage.getItem('selectedProfile') || 'pm';
 
+let verifyAbort = new AbortController();
+
 const listEl = document.getElementById('list'),
     detailsEl = document.getElementById('job-details'),
     detailsErrorEl = document.getElementById('details-error'),
@@ -268,7 +270,7 @@ async function verifyJob(job) {
     statusEl.classList.remove('fail');
 
     try {
-        const { active } = await api(endpoints.verify(job.id));
+        const { active } = await api(endpoints.verify(job.id), { signal: verifyAbort.signal });
         statusEl.classList.remove('spinner');
         statusEl.classList.add(active ? 'ok' : 'fail');
     } catch (err) {
@@ -298,6 +300,9 @@ function showDetails(job) {
     detailsEl.querySelector('div.info').innerText = `${job.company} · ${job.location}`;
     detailsEl.querySelector('a.apply-btn').href = job.link;
     detailsEl.querySelector('div.description').innerHTML = job.html || job.description;
+
+    verifyAbort.abort();
+    verifyAbort = new AbortController();
 
     verifyJob(job);
 }
