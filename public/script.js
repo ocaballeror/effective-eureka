@@ -335,12 +335,11 @@ function applyFilter() {
         let matchesLocation = true;
         if (locationState !== 0) {
             const location = j.location.toLowerCase();
+            const spain = location.includes('spain') || location.includes('madrid') || location.includes('barcelona');
             if (locationState === 1) {
-                matchesLocation = location.includes('ireland');
+                matchesLocation = spain;
             } else if (locationState === 2) {
-                matchesLocation = location.includes('germany');
-            } else if (locationState === 3) {
-                matchesLocation = location.includes('spain') || location.includes('madrid') || location.includes('barcelona');
+                matchesLocation = !spain;
             }
         }
 
