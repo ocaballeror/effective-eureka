@@ -312,7 +312,7 @@ function applyFilter() {
     const q = searchEl.value.toLowerCase();
     const viewedState = parseInt(viewedDropdown.value, 10);
     const appliedState = parseInt(appliedDropdown.value, 10);
-    const locationState = parseInt(locationDropdown.value, 10);
+    const locationState = locationDropdown.value;
 
     localStorage.setItem('viewedFilter', viewedDropdown.value);
     localStorage.setItem('appliedFilter', appliedDropdown.value);
@@ -333,14 +333,12 @@ function applyFilter() {
             (appliedState === 2 && j.applied);
 
         let matchesLocation = true;
-        if (locationState !== 0) {
+        if (locationState !== "all") {
             const location = j.location.toLowerCase();
-            if (locationState === 1) {
-                matchesLocation = location.includes('ireland');
-            } else if (locationState === 2) {
-                matchesLocation = location.includes('germany');
-            } else if (locationState === 3) {
-                matchesLocation = location.includes('spain') || location.includes('madrid') || location.includes('barcelona');
+            if (locationState === "remote") {
+                matchesLocation = location.includes('remote');
+            } else {
+                matchesLocation = location.includes(locationState);
             }
         }
 
