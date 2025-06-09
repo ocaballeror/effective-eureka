@@ -30,21 +30,6 @@ const baseJobs: Job[] = JSON.parse(
     (key, value) => (key == 'created' || key == 'updated') ? new Date(value) : value
 );
 
-async function migrate() {
-    const store = getStore('jobs');
-    await Promise.all(
-        ['ignored', 'viewed', 'applied'].map(async key => {
-            const data = await store.get(key, { type: 'json' });
-            if (!Array.isArray(data)) return;
-
-            console.log('Migrating blob key', key);
-            await store.setJSON(key + '-old', data);
-            await store.setJSON(key, data.reduce((acc, val) => ({ ...acc, [val]: true }), {}));
-        })
-    );
-}
-
-
 export async function readJobs(profile: string): Promise<Job[]> {
     const [ignored, viewed, applied] = await Promise.all([
         manageList('ignored'), manageList('viewed'), manageList('applied')
@@ -72,7 +57,6 @@ async function manageList<T>(
     key: string,
     callback?: (items: Record<string, T>) => void | Promise<void>
 ): Promise<Record<string, T>> {
-    await migrate();
     const store = getStore('jobs');
     const data = (await store.get(key, { type: 'json' })) || {};
     console.log(`Found ${Object.keys(data).length} jobs at ${key}`)
