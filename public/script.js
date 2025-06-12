@@ -397,7 +397,7 @@ function switchProfile(profile) {
     profileMenu.classList.add('hidden');
     load();
 
-    const nameMap = { pm: "Hüh", python: "Nerfleisch" };
+    const nameMap = { pm: "Hüh", py: "Nerfleisch" };
     showToast(`Switched to ${nameMap[profile]}`);
 }
 
