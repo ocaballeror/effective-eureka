@@ -2,16 +2,18 @@
   "dependencies": {
     "@netlify/blobs": "^9.1.1",
     "@netlify/functions": "^3.1.8",
+    "@supabase/supabase-js": "^2.50.0",
     "@types/express": "^5.0.1",
     "express": "^5.1.0",
     "sanitize-html": "^2.16.0",
     "serverless-http": "^3.2.0",
+    "supabase": "^2.24.3",
     "typescript": "^5.8.3"
   },
   "devDependencies": {
     "@types/sanitize-html": "^2.16.0",
     "netlify": "^13.3.5",
-    "netlify-cli": "^21.4.0",
+    "netlify-cli": "^21.6.0",
     "nodemon": "^3.1.10",
     "typescript-language-server": "^4.3.4",
     "vscode-langservers-extracted": "^4.10.0"
