@@ -225,8 +225,18 @@ function createJobEl(job) {
 
     const content = document.createElement('div');
     content.className = 'job-content';
-    content.innerHTML = `<h3>${job.title}</h3>
+    
+    const logo = document.createElement('img');
+    logo.className = 'company-logo';
+    logo.src = job.logo || 'default-logo.png';
+    logo.alt = `${job.company} logo`;
+    content.appendChild(logo);
+
+    const textContent = document.createElement('div');
+    textContent.className = 'job-text-content';
+    textContent.innerHTML = `<h3>${job.title}</h3>
                        <div class="meta">${job.company} · ${job.location}</div>`;
+    content.appendChild(textContent);
 
     el.appendChild(content);
 

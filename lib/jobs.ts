@@ -24,6 +24,7 @@ export type Job = {
     viewed: boolean;
     stale: boolean;
     mode: string;
+    logo: string | null;
 };
 
 
