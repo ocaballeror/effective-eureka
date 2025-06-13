@@ -11,11 +11,13 @@ export type Database = {
     Tables: {
       jobs: {
         Row: {
+          applied: boolean
           company: string
           created: string
           description: string
           html: string | null
           id: number
+          ignored: boolean
           link: string
           location: string
           logo: string | null
@@ -26,13 +28,16 @@ export type Database = {
           title: string
           updated: string
           valid: boolean
+          viewed: boolean
         }
         Insert: {
+          applied?: boolean
           company: string
           created: string
           description: string
           html?: string | null
           id: number
+          ignored?: boolean
           link: string
           location: string
           logo?: string | null
@@ -43,13 +48,16 @@ export type Database = {
           title: string
           updated: string
           valid: boolean
+          viewed?: boolean
         }
         Update: {
+          applied?: boolean
           company?: string
           created?: string
           description?: string
           html?: string | null
           id?: number
+          ignored?: boolean
           link?: string
           location?: string
           logo?: string | null
@@ -60,6 +68,7 @@ export type Database = {
           title?: string
           updated?: string
           valid?: boolean
+          viewed?: boolean
         }
         Relationships: []
       }
