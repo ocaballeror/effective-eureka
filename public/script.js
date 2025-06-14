@@ -220,9 +220,22 @@ function selectFirstJob() {
         return;
     }
 
+    // Try to restore the previously selected job
+    const savedJobId = localStorage.getItem('selectedJobId');
+    if (savedJobId) {
+        const savedJob = state.filtered.find(j => j.id == savedJobId);
+        if (savedJob) {
+            const jobEl = els.list.querySelector(`[data-id="${savedJobId}"]`)?.closest('.job-item');
+            if (jobEl) {
+                selectJob(jobEl, savedJob);
+                return;
+            }
+        }
+    }
+
+    // Fall back to first job if saved job not found
     const job = state.filtered[0];
     const jobEl = els.list.querySelector('.job-item');
-
     if (jobEl) {
         selectJob(jobEl, job);
     }
@@ -235,6 +248,9 @@ function selectJob(jobEl, job) {
     jobEl.classList.add('active');
     markViewed(jobEl, job, false);
     showDetails(job);
+    
+    // Save selected job ID
+    localStorage.setItem('selectedJobId', job.id);
 }
 
 function createJobEl(job) {
@@ -456,6 +472,7 @@ function switchProfile(profile) {
 
     state.currentProfile = profile;
     localStorage.setItem('selectedProfile', profile);
+    localStorage.removeItem('selectedJobId'); // Clear selected job when switching profiles
 
     // Update profile menu selection
     document.querySelectorAll('.profile-option').forEach(btn => {
