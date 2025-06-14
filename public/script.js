@@ -22,7 +22,8 @@ const listEl = document.getElementById('list'),
     viewedDropdownContainer = document.getElementById('viewed-dropdown-container'),
     appliedDropdownContainer = document.getElementById('applied-dropdown-container'),
     locationDropdownContainer = document.getElementById('location-dropdown-container'),
-    jobsCountEl = document.getElementById('jobs-count');
+    jobsCountEl = document.getElementById('jobs-count'),
+    summarizeBtn = document.getElementById('summarize-btn');
 
 let appliedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 let viewedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
@@ -310,7 +311,24 @@ function showDetails(job) {
     detailsEl.querySelector('h2').innerText = job.title;
     detailsEl.querySelector('div.info').innerText = `${job.company} · ${job.location}`;
     detailsEl.querySelector('a.apply-btn').href = job.link;
-    detailsEl.querySelector('div.description').innerHTML = job.html || job.description;
+    
+    // Show/hide summarize button based on summary availability
+    summarizeBtn.style.display = job.summary ? 'inline-flex' : 'none';
+    
+    // Restore summarize state from localStorage
+    const isSummarized = localStorage.getItem('summarizeEnabled') === 'true';
+    summarizeBtn.classList.toggle('active', isSummarized);
+    
+    const descriptionEl = detailsEl.querySelector('div.description');
+    
+    if (isSummarized && job.summary) {
+        // Convert markdown to HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = marked.parse(job.summary);
+        descriptionEl.innerHTML = tempDiv.innerHTML;
+    } else {
+        descriptionEl.innerHTML = job.html || job.description;
+    }
 
     verifyAbort.abort();
     verifyAbort = new AbortController();
@@ -546,3 +564,23 @@ function initializeProfile() {
 initializeProfile();
 initializeCustomDropdowns();
 load();
+
+summarizeBtn.addEventListener('click', () => {
+    const job = getJobFromEl(document.querySelector('.job-item.active'));
+    if (!job) return;
+
+    summarizeBtn.classList.toggle('active');
+    const isSummarized = summarizeBtn.classList.contains('active');
+    localStorage.setItem('summarizeEnabled', isSummarized);
+    
+    const descriptionEl = detailsEl.querySelector('div.description');
+    
+    if (isSummarized && job.summary) {
+        // Convert markdown to HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = marked.parse(job.summary);
+        descriptionEl.innerHTML = tempDiv.innerHTML;
+    } else {
+        descriptionEl.innerHTML = job.html || job.description;
+    }
+});

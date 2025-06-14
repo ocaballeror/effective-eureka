@@ -7,6 +7,8 @@
         <link rel="icon" href="favicon.ico" type="image/x-icon">
         <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"/> -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     </head>
     <body>
         <header>
@@ -117,13 +119,23 @@
                     <em>Select a job...</em>
                 </div>
                 <div id="job-details" class="hidden">
-                    <h2>Default job title</h2>
-                    <div class="info">Default job · Default company</div>
-                    <a href="" target="_blank" class="apply-btn">
-                        <img src="linkedin.svg" alt="LinkedIn logo">
-                        View on LinkedIn
-                    </a>
-                    <span class="job-status spinner material-symbols-outlined"></span>
+                    <div class="details-header">
+                        <div class="details-title">
+                            <h2>Default job title</h2>
+                            <div class="info">Default job · Default company</div>
+                        </div>
+                        <button id="summarize-btn" class="action-btn">
+                            <span class="material-symbols-outlined">wand_stars</span>
+                            Summarize
+                        </button>
+                    </div>
+                    <div class="details-actions">
+                        <a href="" target="_blank" class="apply-btn">
+                            <img src="linkedin.svg" alt="LinkedIn logo">
+                            View on LinkedIn
+                        </a>
+                        <span class="job-status spinner material-symbols-outlined"></span>
+                    </div>
                     <div class="description">Default description</div>
                 </div>
             </div>
@@ -137,6 +149,7 @@
                     <button id="confirm-ok"><img src="jazzo.png"></button>
                 </div>
             </div>
-            <script src="script.js"></script>
+        </div>
+        <script src="script.js"></script>
     </body>
 </html>
