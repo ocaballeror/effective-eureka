@@ -27,16 +27,33 @@ export type Job = {
     logo: string | null;
 };
 
+export type PaginatedJobs = {
+    items: Job[];
+    total: number;
+    hasMore: boolean;
+};
 
-export async function readJobs(profile: string): Promise<Job[]> {
-    const { data, error } = await supabase
+export async function readJobs(
+    profile: string,
+    page: number = 0,
+    limit: number = 20,
+    search: string = ''
+): Promise<PaginatedJobs> {
+    let query = supabase
         .from('jobs')
-        .select()
+        .select('*', { count: 'exact' })
         .eq('valid', true)
         .eq('mode', profile)
         .eq('ignored', false)
-        .or('stale.eq.false, applied.eq.true')
-        ;
+        .or('stale.eq.false, applied.eq.true');
+
+    if (search) {
+        query = query.or(`title.ilike.%${search}%,company.ilike.%${search}%,location.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+
+    const { data, error, count } = await query
+        .range(page * limit, (page + 1) * limit - 1)
+        .order('created', { ascending: false });
 
     if (error) throw new Error(JSON.stringify(error)); 
 
@@ -47,11 +64,15 @@ export async function readJobs(profile: string): Promise<Job[]> {
             "description": "",
             "created": new Date(job.created),
             "updated": new Date(job.updated),
-        }))
-        .sort((a, b) => b.created.getTime() - a.created.getTime());
-    console.log(`Found ${jobs.length} jobs to display`);
+        }));
 
-    return jobs;
+    console.log(`Found ${jobs.length} jobs to display (page ${page})`);
+
+    return {
+        items: jobs,
+        total: count || 0,
+        hasMore: count ? (page + 1) * limit < count : false
+    };
 }
 
 export async function verifyJob(id: string): Promise<boolean | null | undefined> {

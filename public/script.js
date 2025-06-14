@@ -1,10 +1,15 @@
 let filterTimer;
 let jobs = [], filtered = [];
+let currentPage = 0;
+let isLoading = false;
+let hasMore = true;
 let currentProfile = localStorage.getItem('selectedProfile') || 'pm';
+let searchTimeout;
 
 let verifyAbort = new AbortController();
 
 const listEl = document.getElementById('list'),
+    listContainer = document.getElementById('list-container'),
     detailsEl = document.getElementById('job-details'),
     detailsErrorEl = document.getElementById('details-error'),
     searchEl = document.getElementById('search'),
@@ -30,7 +35,7 @@ let viewedState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 let locationState = 0; // 0: Show All, 1: Hide Applied, 2: Show Only Applied
 
 const endpoints = {
-    list: (profile) => `/api/job?profile=${profile}`,
+    list: () => `/api/job`,
     verify: (id) => `/api/job/${id}/verify`,
     view: (id) => `/api/job/${id}/view`,
     unview: (id) => `/api/job/${id}/unview`,
@@ -152,18 +157,73 @@ async function toggleApply(jobEl, job) {
     }
 }
 
-async function load() {
+async function load(append = false) {
+    if (isLoading || (!append && !hasMore)) return;
+    
+    isLoading = true;
     try {
-        jobs = await api(endpoints.list(currentProfile));
-        filtered = jobs;
-        applyFilter();
-        updateJobsCount();
-        selectFirstJob();
+        const q = searchEl.value.toLowerCase();
+        const viewedState = parseInt(viewedDropdown.value, 10);
+        const appliedState = parseInt(appliedDropdown.value, 10);
+        const locationState = locationDropdown.value;
+
+        const params = new URLSearchParams({
+            profile: currentProfile,
+            page: append ? currentPage : 0,
+            limit: 20,
+            search: q
+        });
+
+        const response = await api(endpoints.list() + '?' + params.toString());
+        
+        if (!append) {
+            jobs = [];
+            filtered = [];
+            currentPage = 0;
+        }
+
+        const newJobs = response.items;
+        jobs = [...jobs, ...newJobs];
+        hasMore = response.hasMore;
+        currentPage++;
+
+        // Apply filters to new jobs
+        const newFiltered = newJobs.filter(j => {
+            const matchesViewed = viewedState === 0 ||
+                (viewedState === 1 && !j.viewed) ||
+                (viewedState === 2 && j.viewed);
+
+            const matchesApplied = appliedState === 0 ||
+                (appliedState === 1 && !j.applied) ||
+                (appliedState === 2 && j.applied);
+
+            let matchesLocation = true;
+            if (locationState !== "all") {
+                const location = j.location.toLowerCase();
+                if (locationState === "remote") {
+                    matchesLocation = location.includes('remote');
+                } else {
+                    matchesLocation = location.includes(locationState);
+                }
+            }
+
+            return matchesViewed && matchesApplied && matchesLocation;
+        });
+
+        filtered = [...filtered, ...newFiltered];
+        renderList(append);
+        updateJobsCount(response.total);
+        
+        if (!append) {
+            selectFirstJob();
+        }
     } catch (err) {
         console.error("Failed to load jobs:", err);
         showToast("Couldn't load jobs. Try again later.");
         showDetailsError("Couldn't load jobs. Try again later.");
         jobsCountEl.textContent = "Showing 0 jobs";
+    } finally {
+        isLoading = false;
     }
 }
 
@@ -247,8 +307,10 @@ function createJobEl(job) {
     return el;
 }
 
-function renderList() {
-    listEl.innerHTML = '';
+function renderList(append = false) {
+    if (!append) {
+        listEl.innerHTML = '';
+    }
 
     // Update the job count display
     updateJobsCount();
@@ -259,12 +321,17 @@ function renderList() {
     }
 
     const frag = document.createDocumentFragment();
-    filtered.forEach(job => frag.appendChild(createJobEl(job)));
+    const startIdx = append ? listEl.children.length : 0;
+    const endIdx = Math.min(startIdx + 20, filtered.length);
+    
+    for (let i = startIdx; i < endIdx; i++) {
+        frag.appendChild(createJobEl(filtered[i]));
+    }
+    
     listEl.appendChild(frag);
 }
 
-function updateJobsCount() {
-    const totalJobs = jobs.length;
+function updateJobsCount(totalJobs) {
     const filteredJobs = filtered.length;
 
     if (totalJobs === filteredJobs) {
@@ -299,6 +366,23 @@ function showDetailsError(content) {
     detailsErrorEl.innerHTML = `<em>${content}</em>`;
 };
 
+async function updateDescription(descriptionEl, content, isSummarized) {
+    // Add fade-out class
+    descriptionEl.classList.add('fade-out');
+    
+    // Wait for fade-out animation
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Update content and classes
+    descriptionEl.innerHTML = content;
+    descriptionEl.classList.toggle('summary-mode', isSummarized);
+    
+    // Remove fade-out class to trigger fade-in
+    requestAnimationFrame(() => {
+        descriptionEl.classList.remove('fade-out');
+    });
+}
+
 function showDetails(job) {
     if (!job) {
         showDetailsError('Select a job...');
@@ -325,9 +409,9 @@ function showDetails(job) {
         // Convert markdown to HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = marked.parse(job.summary);
-        descriptionEl.innerHTML = tempDiv.innerHTML;
+        updateDescription(descriptionEl, tempDiv.innerHTML, true);
     } else {
-        descriptionEl.innerHTML = job.html || job.description;
+        updateDescription(descriptionEl, job.html || job.description, false);
     }
 
     verifyAbort.abort();
@@ -346,34 +430,10 @@ function applyFilter() {
     localStorage.setItem('appliedFilter', appliedDropdown.value);
     localStorage.setItem('locationFilter', locationDropdown.value);
 
-    filtered = jobs.filter(j => {
-        const matchesSearch = j.title.toLowerCase().includes(q) ||
-            j.company.toLowerCase().includes(q) ||
-            j.location.toLowerCase().includes(q) ||
-            j.description.toLowerCase().includes(q);
-
-        const matchesViewed = viewedState === 0 ||
-            (viewedState === 1 && !j.viewed) ||
-            (viewedState === 2 && j.viewed);
-
-        const matchesApplied = appliedState === 0 ||
-            (appliedState === 1 && !j.applied) ||
-            (appliedState === 2 && j.applied);
-
-        let matchesLocation = true;
-        if (locationState !== "all") {
-            const location = j.location.toLowerCase();
-            if (locationState === "remote") {
-                matchesLocation = location.includes('remote');
-            } else {
-                matchesLocation = location.includes(locationState);
-            }
-        }
-
-        return matchesSearch && matchesViewed && matchesApplied && matchesLocation;
-    });
-
-    renderList();
+    // Reset pagination and reload
+    currentPage = 0;
+    hasMore = true;
+    load();
 }
 
 listEl.addEventListener('click', async e => {
@@ -391,18 +451,25 @@ listEl.addEventListener('click', async e => {
 });
 
 searchEl.addEventListener('input', () => {
-    clearTimeout(filterTimer);
-    filterTimer = setTimeout(() => {
-        applyFilter();
-        clearBtn.style.display = searchEl.value ? 'block' : 'none';
+    clearTimeout(searchTimeout);
+    clearBtn.style.display = searchEl.value ? 'block' : 'none';
+    
+    searchTimeout = setTimeout(() => {
+        // Reset pagination and reload
+        currentPage = 0;
+        hasMore = true;
+        load();
         localStorage.setItem('searchQuery', searchEl.value);
-    }, 150);
+    }, 500); // 500ms debounce delay
 });
 
 clearBtn.addEventListener('click', () => {
     searchEl.value = '';
-    applyFilter();
     clearBtn.style.display = 'none';
+    // Reset pagination and reload
+    currentPage = 0;
+    hasMore = true;
+    load();
     localStorage.removeItem('searchQuery');
     searchEl.focus();
 });
@@ -563,9 +630,16 @@ function initializeProfile() {
 
 initializeProfile();
 initializeCustomDropdowns();
-load();
 
-summarizeBtn.addEventListener('click', () => {
+// Add scroll event listener for infinite scrolling
+listContainer.addEventListener('scroll', () => {
+    const { scrollTop, scrollHeight, clientHeight } = listContainer;
+    if (scrollHeight - scrollTop <= clientHeight * 1.5) {
+        load(true);
+    }
+});
+
+summarizeBtn.addEventListener('click', async () => {
     const job = getJobFromEl(document.querySelector('.job-item.active'));
     if (!job) return;
 
@@ -579,8 +653,11 @@ summarizeBtn.addEventListener('click', () => {
         // Convert markdown to HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = marked.parse(job.summary);
-        descriptionEl.innerHTML = tempDiv.innerHTML;
+        await updateDescription(descriptionEl, tempDiv.innerHTML, true);
     } else {
-        descriptionEl.innerHTML = job.html || job.description;
+        await updateDescription(descriptionEl, job.html || job.description, false);
     }
 });
+
+// Initial load
+load();
