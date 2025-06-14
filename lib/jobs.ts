@@ -83,7 +83,7 @@ export async function verifyJob(id: string): Promise<boolean | null | undefined>
 
     await store.setJSON('verified', items);
 
-    return record.valid;
+    return items[id].valid;
 }
 
 
