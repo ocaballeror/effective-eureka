@@ -35,7 +35,10 @@ export async function readJobs(
     profile: string,
     page: number = 0,
     limit: number = 20,
-    search: string = ''
+    search: string = '',
+    viewedState: number = 0,
+    appliedState: number = 0,
+    locationState: string = 'all'
 ): Promise<PaginatedJobs> {
     let query = supabase
         .from('jobs')
@@ -45,6 +48,30 @@ export async function readJobs(
         .eq('ignored', false)
         .or('stale.eq.false, applied.eq.true');
 
+    // Apply viewed filter
+    if (viewedState === 1) {
+        query = query.eq('viewed', false);
+    } else if (viewedState === 2) {
+        query = query.eq('viewed', true);
+    }
+
+    // Apply applied filter
+    if (appliedState === 1) {
+        query = query.eq('applied', false);
+    } else if (appliedState === 2) {
+        query = query.eq('applied', true);
+    }
+
+    // Apply location filter
+    if (locationState !== 'all') {
+        if (locationState === 'remote') {
+            query = query.ilike('location', '%remote%');
+        } else {
+            query = query.ilike('location', `%${locationState}%`);
+        }
+    }
+
+    // Apply search filter
     if (search) {
         query = query.or(`title.ilike.%${search}%,company.ilike.%${search}%,location.ilike.%${search}%,description.ilike.%${search}%`);
     }

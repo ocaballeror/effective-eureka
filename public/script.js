@@ -175,7 +175,10 @@ async function load(append = false) {
             profile: state.currentProfile,
             page: append ? state.currentPage : 0,
             limit: 20,
-            search: q
+            search: q,
+            viewed: viewedState,
+            applied: appliedState,
+            location: locationState
         });
 
         const response = await api(endpoints.list() + '?' + params.toString());
@@ -187,33 +190,9 @@ async function load(append = false) {
 
         const newJobs = response.items;
         state.jobs = [...state.jobs, ...newJobs];
+        state.filtered = [...state.filtered, ...newJobs];
         state.hasMore = response.hasMore;
         state.currentPage++;
-
-        // Apply filters to new jobs
-        const newFiltered = newJobs.filter(j => {
-            const matchesViewed = viewedState === 0 ||
-                (viewedState === 1 && !j.viewed) ||
-                (viewedState === 2 && j.viewed);
-
-            const matchesApplied = appliedState === 0 ||
-                (appliedState === 1 && !j.applied) ||
-                (appliedState === 2 && j.applied);
-
-            let matchesLocation = true;
-            if (locationState !== "all") {
-                const location = j.location.toLowerCase();
-                if (locationState === "remote") {
-                    matchesLocation = location.includes('remote');
-                } else {
-                    matchesLocation = location.includes(locationState);
-                }
-            }
-
-            return matchesViewed && matchesApplied && matchesLocation;
-        });
-
-        state.filtered = [...state.filtered, ...newFiltered];
 
         renderList(append);
         updateJobsCount(response.total);
@@ -315,9 +294,6 @@ function renderList(append = false) {
         els.list.innerHTML = '';
     }
 
-    // Update the job count display
-    updateJobsCount();
-
     if (state.filtered.length === 0) {
         els.list.innerHTML = '<div class="no-results">No jobs found</div>';
         return;
@@ -335,13 +311,7 @@ function renderList(append = false) {
 }
 
 function updateJobsCount(totalJobs) {
-    const filteredJobs = state.filtered.length;
-
-    if (totalJobs === filteredJobs) {
-        els.jobsCount.textContent = `Showing all ${totalJobs} jobs`;
-    } else {
-        els.jobsCount.textContent = `Showing ${filteredJobs} of ${totalJobs} jobs`;
-    }
+    els.jobsCount.textContent = `Showing ${totalJobs} jobs`;
 }
 
 async function verifyJob(job) {
