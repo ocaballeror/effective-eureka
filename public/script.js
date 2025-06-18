@@ -159,9 +159,7 @@ async function toggleApply(jobEl, job) {
 }
 
 async function load(append = false) {
-    if (state.isLoading || (!append && !state.hasMore)) {
-        return;
-    }
+    if (state.isLoading || (!append && !state.hasMore)) return;
 
     state.isLoading = true;
 
@@ -248,7 +246,7 @@ function selectJob(jobEl, job) {
     jobEl.classList.add('active');
     markViewed(jobEl, job, false);
     showDetails(job);
-    
+
     // Save selected job ID
     localStorage.setItem('selectedJobId', job.id);
 }
@@ -317,7 +315,7 @@ function renderList(append = false) {
 
     const frag = document.createDocumentFragment();
     const startIdx = append ? els.list.children.length : 0;
-    const endIdx = state.filtered.length; // Render all available filtered jobs
+    const endIdx = Math.min(startIdx + 20, state.filtered.length);
 
     for (let i = startIdx; i < endIdx; i++) {
         frag.appendChild(createJobEl(state.filtered[i]));
