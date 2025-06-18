@@ -120,7 +120,6 @@ async function markViewed(el, job, cycle = false) {
 
 async function deleteJob(jobEl, job) {
     if (!await showConfirm('Delete this job?')) return;
-    console.log("Deleting job", job.id);
 
     const btn = jobEl.querySelector('.del');
     btn.disabled = true;
@@ -160,9 +159,12 @@ async function toggleApply(jobEl, job) {
 }
 
 async function load(append = false) {
-    if (state.isLoading || (!append && !state.hasMore)) return;
-    
+    if (state.isLoading || (!append && !state.hasMore)) {
+        return;
+    }
+
     state.isLoading = true;
+
     try {
         const q = els.search.value.toLowerCase();
         const viewedState = parseInt(els.viewedDropdown.value, 10);
@@ -177,7 +179,6 @@ async function load(append = false) {
         });
 
         const response = await api(endpoints.list() + '?' + params.toString());
-        
         if (!append) {
             state.jobs = [];
             state.filtered = [];
@@ -213,14 +214,14 @@ async function load(append = false) {
         });
 
         state.filtered = [...state.filtered, ...newFiltered];
+
         renderList(append);
         updateJobsCount(response.total);
-        
+
         if (!append) {
             selectFirstJob();
         }
     } catch (err) {
-        console.error("Failed to load jobs:", err);
         showToast("Couldn't load jobs. Try again later.");
         showDetailsError("Couldn't load jobs. Try again later.");
         els.jobsCount.textContent = "Showing 0 jobs";
@@ -288,7 +289,7 @@ function createJobEl(job) {
 
     const content = document.createElement('div');
     content.className = 'job-content';
-    
+
     const logo = document.createElement('img');
     logo.className = 'company-logo';
     logo.src = job.logo || 'default-logo.png';
@@ -324,12 +325,12 @@ function renderList(append = false) {
 
     const frag = document.createDocumentFragment();
     const startIdx = append ? els.list.children.length : 0;
-    const endIdx = Math.min(startIdx + 20, state.filtered.length);
-    
+    const endIdx = state.filtered.length; // Render all available filtered jobs
+
     for (let i = startIdx; i < endIdx; i++) {
         frag.appendChild(createJobEl(state.filtered[i]));
     }
-    
+
     els.list.appendChild(frag);
 }
 
@@ -371,14 +372,14 @@ function showDetailsError(content) {
 async function updateDescription(descriptionEl, content, isSummarized) {
     // Add fade-out class
     descriptionEl.classList.add('fade-out');
-    
+
     // Wait for fade-out animation
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     // Update content and classes
     descriptionEl.innerHTML = content;
     descriptionEl.classList.toggle('summary-mode', isSummarized);
-    
+
     // Remove fade-out class to trigger fade-in
     requestAnimationFrame(() => {
         descriptionEl.classList.remove('fade-out');
@@ -397,16 +398,16 @@ function showDetails(job) {
     els.details.querySelector('h2').innerText = job.title;
     els.details.querySelector('div.info').innerText = `${job.company} · ${job.location}`;
     els.details.querySelector('a.apply-btn').href = job.link;
-    
+
     // Show/hide summarize button based on summary availability
     els.summarizeBtn.style.display = job.summary ? 'inline-flex' : 'none';
-    
+
     // Restore summarize state from localStorage
     const isSummarized = localStorage.getItem('summarizeEnabled') === 'true';
     els.summarizeBtn.classList.toggle('active', isSummarized);
-    
+
     const descriptionEl = els.details.querySelector('div.description');
-    
+
     if (isSummarized && job.summary) {
         // Convert markdown to HTML
         const tempDiv = document.createElement('div');
@@ -455,7 +456,7 @@ els.list.addEventListener('click', async e => {
 els.search.addEventListener('input', () => {
     clearTimeout(state.searchTimeout);
     els.clearBtn.style.display = els.search.value ? 'block' : 'none';
-    
+
     state.searchTimeout = setTimeout(() => {
         // Reset pagination and reload
         state.currentPage = 0;
@@ -641,11 +642,15 @@ els.listContainer.onscroll = (() => {
         ticking = true;
         requestAnimationFrame(() => {
             const { scrollTop, scrollHeight, clientHeight } = els.listContainer;
-            if (scrollHeight - scrollTop <= clientHeight * 1.5) load(true);
+
+            // Load more when user scrolls to within 200px of the bottom
+            if (scrollHeight - scrollTop - clientHeight < 200 && state.hasMore && !state.isLoading) {
+                load(true);
+            }
             ticking = false;
         });
     };
-});
+})();
 
 els.summarizeBtn.addEventListener('click', async () => {
     const job = getJobFromEl(document.querySelector('.job-item.active'));
@@ -654,9 +659,9 @@ els.summarizeBtn.addEventListener('click', async () => {
     els.summarizeBtn.classList.toggle('active');
     const isSummarized = els.summarizeBtn.classList.contains('active');
     localStorage.setItem('summarizeEnabled', isSummarized);
-    
+
     const descriptionEl = els.details.querySelector('div.description');
-    
+
     if (isSummarized && job.summary) {
         // Convert markdown to HTML
         const tempDiv = document.createElement('div');
