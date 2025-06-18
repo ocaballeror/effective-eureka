@@ -23,11 +23,12 @@ export type Database = {
           logo: string | null
           mode: string
           reason: string
+          remoteness: Database["public"]["Enums"]["remoteness"] | null
           stale: boolean
           summary: string | null
           title: string
           updated: string
-          valid: boolean
+          valid: boolean | null
           viewed: boolean
         }
         Insert: {
@@ -43,11 +44,12 @@ export type Database = {
           logo?: string | null
           mode: string
           reason: string
+          remoteness?: Database["public"]["Enums"]["remoteness"] | null
           stale: boolean
           summary?: string | null
           title: string
           updated: string
-          valid: boolean
+          valid?: boolean | null
           viewed?: boolean
         }
         Update: {
@@ -63,11 +65,12 @@ export type Database = {
           logo?: string | null
           mode?: string
           reason?: string
+          remoteness?: Database["public"]["Enums"]["remoteness"] | null
           stale?: boolean
           summary?: string | null
           title?: string
           updated?: string
-          valid?: boolean
+          valid?: boolean | null
           viewed?: boolean
         }
         Relationships: []
@@ -80,7 +83,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      remoteness: "remote" | "hybrid" | "onsite" | "None"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -195,6 +198,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      remoteness: ["remote", "hybrid", "onsite", "None"],
+    },
   },
 } as const

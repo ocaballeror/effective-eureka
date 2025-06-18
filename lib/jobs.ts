@@ -1,6 +1,4 @@
-import path from 'path';
 import { getStore } from '@netlify/blobs';
-import { promises as fs } from 'fs';
 import { createClient } from '@supabase/supabase-js';
 
 import { Database, Tables } from './database.types';
