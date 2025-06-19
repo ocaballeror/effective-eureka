@@ -8,3 +8,6 @@
   node_bundler = 'esbuild'
   directory = "functions"
   included_files = ["data/**"]
+
+[images]
+  remote_images = ["https://media.licdn.com/.*"]

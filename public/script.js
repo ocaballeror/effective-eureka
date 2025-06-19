@@ -285,7 +285,7 @@ function createJobEl(job) {
 
     const logo = document.createElement('img');
     logo.className = 'company-logo';
-    logo.src = job.logo || 'default-logo.png';
+    logo.src = "/.netlify/images?url=" + encodeURIComponent(job.logo || 'default-logo.png');
     logo.alt = `${job.company} logo`;
     content.appendChild(logo);
 
