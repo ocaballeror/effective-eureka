@@ -25,13 +25,23 @@ export type Job = {
     logo: string | null;
 };
 
+export type JobHeader = {
+    id: number;
+    title: string;
+    company: string;
+    location: string;
+    applied: boolean;
+    viewed: boolean;
+    logo: string | null;
+}
+
 export type PaginatedJobs = {
-    items: Job[];
+    items: JobHeader[];
     total: number;
     hasMore: boolean;
 };
 
-export async function readJobs(
+export async function listJobs(
     profile: string,
     page: number = 0,
     limit: number = 20,
@@ -42,11 +52,12 @@ export async function readJobs(
 ): Promise<PaginatedJobs> {
     let query = supabase
         .from('jobs')
-        .select('*', { count: 'exact' })
+        .select('id,title,company,location,applied,viewed,logo', { count: 'exact' })
         .eq('valid', true)
         .eq('mode', profile)
         .eq('ignored', false)
-        .or('stale.eq.false, applied.eq.true');
+        .or('stale.eq.false, applied.eq.true')
+        .order('created', { ascending: false });
 
     // Apply viewed filter
     if (viewedState === 1) {
@@ -80,16 +91,9 @@ export async function readJobs(
         .range(page * limit, (page + 1) * limit - 1)
         .order('created', { ascending: false });
 
-    if (error) throw new Error(JSON.stringify(error)); 
+    if (error) throw new Error(JSON.stringify(error));
 
-    const jobs = (data as Tables<'jobs'>[])
-        .map(job => ({
-            ...job,
-            "html": job.html || job.description,
-            "description": "",
-            "created": new Date(job.created),
-            "updated": new Date(job.updated),
-        }));
+    const jobs = (data as Tables<'jobs'>[]);
 
     console.log(`Found ${jobs.length} jobs to display (page ${page})`);
 
@@ -100,8 +104,28 @@ export async function readJobs(
     };
 }
 
-export async function verifyJob(id: string): Promise<boolean | null | undefined> {
+export async function viewJob(id: string): Promise<Job | undefined> {
     const { data } = await supabase.from('jobs').select().eq('id', id as any).maybeSingle();
+    if (!data) {
+        console.log(`Job doesn't exist: ${id}`);
+        return;
+    }
+
+    toggle('viewed', id, true);
+
+    const job = {
+        ...data,
+        "html": data.html || data.description,
+        "description": "",
+        "created": new Date(data.created),
+        "updated": new Date(data.updated),
+    };
+
+    return job;
+}
+
+export async function verifyJob(id: string): Promise<boolean | null | undefined> {
+    const { data } = await supabase.from('jobs').select('link').eq('id', id as any).maybeSingle();
     if (!data) {
         console.log(`Asked to verify a job that doesn't exist: ${id}`);
         return;
@@ -142,7 +166,6 @@ async function toggle(
 }
 
 export const ignoreJob = (id: string) => toggle('ignored', id, true)
-export const viewJob = (id: string) => toggle('viewed', id, true)
 export const unviewJob = (id: string) => toggle('viewed', id, false)
 export const applyJob = (id: string) => toggle('applied', id, true)
 export const unapplyJob = (id: string) => toggle('applied', id, false)

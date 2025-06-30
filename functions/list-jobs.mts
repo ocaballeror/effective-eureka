@@ -1,6 +1,5 @@
-import { readJobs } from '../lib/jobs';
+import { listJobs } from '../lib/jobs';
 import { Config } from "@netlify/functions";
-import sanitizeHtml from 'sanitize-html';
 
 export default async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
@@ -12,10 +11,7 @@ export default async (req: Request): Promise<Response> => {
     const locationState = url.searchParams.get('location') || 'all';
     const profile = url.searchParams.get('profile') || 'pm';
 
-    const jobs = await readJobs(profile, page, limit, search, viewedState, appliedState, locationState);
-    jobs.items.forEach(job => {
-        job.html = job.html ? sanitizeHtml(job.html) : job.description ? job.description : '';
-    });
+    const jobs = await listJobs(profile, page, limit, search, viewedState, appliedState, locationState);
     return new Response(JSON.stringify(jobs), {
         headers: { 'Content-Type': 'application/json' }
     });
