@@ -239,13 +239,22 @@ function selectFirstJob() {
     }
 }
 
-function selectJob(jobEl, job) {
+async function selectJob(jobEl, job) {
     if (!jobEl || !job) return;
+    if (jobEl.classList.contains('active')) return;
 
     document.querySelectorAll('.job-item').forEach(x => x.classList.remove('active'));
     jobEl.classList.add('active');
     markViewed(jobEl, job, false);
-    showDetails(job);
+
+    // Fetch job details from API
+    try {
+        const details = await api(`/api/job/${job.id}`);
+        showDetails(details);
+    } catch (e) {
+        showToast('Failed to load job details');
+        showDetailsError('Failed to load job details');
+    }
 
     // Save selected job ID
     localStorage.setItem('selectedJobId', job.id);
@@ -434,7 +443,7 @@ els.list.addEventListener('click', async e => {
     if (e.target.closest('.apply-btn')) return await toggleApply(jobEl, job);
     if (e.target.closest('.view-btn')) return await markViewed(jobEl, job, true);
 
-    selectJob(jobEl, job);
+    await selectJob(jobEl, job);
 });
 
 els.search.addEventListener('input', () => {
