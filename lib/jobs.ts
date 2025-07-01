@@ -128,7 +128,7 @@ export async function verifyJob(jobid: string): Promise<boolean | null | undefin
     const now = Date.now();
     const record = items[jobid] || { valid: null, when: 0 };
 
-    if (record.when + 60000 < now) {
+    if (record.valid === null || record.when + 60000 < now) {
         try {
             const body = await fetchLinkedin(`/graphql?variables=(cardSectionTypes:List(TOP_CARD),jobPostingUrn:urn%3Ali%3Afsd_jobPosting%3A${jobid},includeSecondaryActionsV2:true)&queryId=voyagerJobsDashJobPostingDetailSections.d5e26c6a0b129827c0cfd9d5a714c5e7`);
             const jobData = body.data.jobsDashJobPostingDetailSectionsByCardSectionTypes.elements[0];
@@ -143,7 +143,8 @@ export async function verifyJob(jobid: string): Promise<boolean | null | undefin
         }
     }
 
-    await store.setJSON('verified', items);
+    if (record.valid !== null)
+        await store.setJSON('verified', items);
 
     return items[jobid].valid;
 }
