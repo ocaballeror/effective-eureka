@@ -108,7 +108,6 @@ async function markViewed(el, job, cycle = false) {
                 el.classList.remove('viewed');
             }
         } else {
-            await api(endpoints.view(job.id));
             el.querySelector('.view-btn span').textContent = 'visibility_off';
             job.viewed = true;
             el.classList.add('viewed');
