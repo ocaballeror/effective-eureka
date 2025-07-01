@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getStore } from '@netlify/blobs';
 
 type Cookie = {
     name: string;
@@ -25,12 +26,18 @@ function buildAuth(raw_cookies: Cookie[]) {
 }
 
 async function getCookies(): Promise<Cookie[]> {
+    const store = getStore('cache');
+    const cookies = await store.get('cookies', { type: 'json' });
+    if (cookies) return cookies;
+
     const { data, error } = await supabase.storage.from('bucket').download('cookies.json');
     if (!data || error) {
         throw new Error(JSON.stringify(error));
     }
 
-    return JSON.parse(await data.text());
+    const newcookies = JSON.parse(await data.text());
+    await store.setJSON('cookies', newcookies);
+    return newcookies;
 }
 
 export async function fetchLinkedin(url: string, method: string = 'GET'): Promise<any> {
