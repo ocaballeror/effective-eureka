@@ -1,12 +1,9 @@
 import { getStore } from '@netlify/blobs';
-import { createClient } from '@supabase/supabase-js';
 
-import { Database, Tables } from './database.types';
+import { Tables } from './database.types';
+import { fetchLinkedin } from './linkedin';
+import { supabase } from './supabase';
 
-const supabase = createClient<Database>(
-    process.env.SUPABASE_DATABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!
-);
 
 export type Job = {
     id: number;
@@ -124,36 +121,31 @@ export async function viewJob(id: string): Promise<Job | undefined> {
     return job;
 }
 
-export async function verifyJob(id: string): Promise<boolean | null | undefined> {
-    const { data } = await supabase.from('jobs').select('link').eq('id', id as any).maybeSingle();
-    if (!data) {
-        console.log(`Asked to verify a job that doesn't exist: ${id}`);
-        return;
-    }
-
+export async function verifyJob(jobid: string): Promise<boolean | null | undefined> {
     const store = getStore('jobs');
     const items = (await store.get('verified', { type: 'json' })) || {};
 
     const now = Date.now();
-    const record = items[id] || { valid: null, when: 0 };
+    const record = items[jobid] || { valid: null, when: 0 };
 
     if (record.when + 60000 < now) {
         try {
-            const resp = await fetch(data.link);
-            const body = await resp.text();
-            items[id] = {
-                valid: !body.includes('No longer accepting applications'),
+            const body = await fetchLinkedin(`/graphql?variables=(cardSectionTypes:List(TOP_CARD),jobPostingUrn:urn%3Ali%3Afsd_jobPosting%3A${jobid},includeSecondaryActionsV2:true)&queryId=voyagerJobsDashJobPostingDetailSections.d5e26c6a0b129827c0cfd9d5a714c5e7`);
+            const jobData = body.data.jobsDashJobPostingDetailSectionsByCardSectionTypes.elements[0];
+            const jobState = jobData.jobPostingDetailSection[0].topCard.jobPosting.jobState;
+            items[jobid] = {
+                valid: jobState !== 'CLOSED',
                 when: now
             };
         } catch (err) {
             console.log(`Error checking linkedin job: ${err}`);
-            items[id] = record;
+            items[jobid] = record;
         }
     }
 
     await store.setJSON('verified', items);
 
-    return items[id].valid;
+    return items[jobid].valid;
 }
 
 
