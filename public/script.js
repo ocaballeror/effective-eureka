@@ -10,7 +10,8 @@ const state = {
     verifyAbort: new AbortController(),
     appliedState: 0, // 0: Show All, 1: Hide Applied, 2: Show Only Applied
     viewedState: 0, // 0: Show All, 1: Hide Applied, 2: Show Only Applied
-    locationState: 0 // 0: Show All, 1: Hide Applied, 2: Show Only Applied
+    locationState: 0, // 0: Show All, 1: Hide Applied, 2: Show Only Applied
+    currentJob: null // Store the currently loaded job details
 };
 
 const els = {
@@ -384,6 +385,8 @@ function showDetails(job) {
         return;
     }
 
+    state.currentJob = job; // Store the current job details
+
     els.details.classList.remove('hidden');
     els.detailsError.classList.add('hidden');
 
@@ -646,7 +649,7 @@ els.listContainer.onscroll = (() => {
 })();
 
 els.summarizeBtn.addEventListener('click', async () => {
-    const job = getJobFromEl(document.querySelector('.job-item.active'));
+    const job = state.currentJob;
     if (!job) return;
 
     els.summarizeBtn.classList.toggle('active');
