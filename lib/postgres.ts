@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-export const dbid = process.env.SUPABASE_URL.replace("https://", '').replace(".supabase.co", '');
+export const dbid = process.env.SUPABASE_DATABASE_URL.replace("https://", '').replace(".supabase.co", '');
 export const pool = new Pool({
     user: `postgres.${dbid}`,
     password: process.env.SUPABASE_PASSWORD,
