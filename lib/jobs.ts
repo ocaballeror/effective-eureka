@@ -1,15 +1,14 @@
 import { getStore } from '@netlify/blobs';
 
-import { Tables } from './database.types';
 import { fetchLinkedin } from './linkedin';
-import { supabase } from './supabase';
+import { pool } from './postgres';
 
 
 export type Job = {
     id: number;
     title: string;
     company: string;
-    location: string;
+    locations: string[];
     description: string;
     html: string;
     link: string;
@@ -26,7 +25,7 @@ export type JobHeader = {
     id: number;
     title: string;
     company: string;
-    location: string;
+    locations: string[];
     applied: boolean;
     viewed: boolean;
     logo: string | null;
@@ -47,75 +46,64 @@ export async function listJobs(
     appliedState: number = 0,
     locationState: string = 'all'
 ): Promise<PaginatedJobs> {
-    let query = supabase
-        .from('jobs')
-        .select('id,title,company,location,applied,viewed,logo', { count: 'exact' })
-        .eq('valid', true)
-        .eq('mode', profile)
-        .eq('ignored', false)
-        .or('stale.eq.false, applied.eq.true')
-        .order('created', { ascending: false });
+    const offset = page * limit;
+    const values: any[] = [profile];
+    let where = `WHERE valid = true AND mode = $1 AND ignored = false AND (stale = false OR applied = true)`;
 
-    // Apply viewed filter
-    if (viewedState === 1) {
-        query = query.eq('viewed', false);
-    } else if (viewedState === 2) {
-        query = query.eq('viewed', true);
-    }
+    if (viewedState === 1) where += ` AND viewed = false`;
+    else if (viewedState === 2) where += ` AND viewed = true`;
 
-    // Apply applied filter
-    if (appliedState === 1) {
-        query = query.eq('applied', false);
-    } else if (appliedState === 2) {
-        query = query.eq('applied', true);
-    }
+    if (appliedState === 1) where += ` AND applied = false`;
+    else if (appliedState === 2) where += ` AND applied = true`;
 
-    // Apply location filter
     if (locationState !== 'all') {
-        if (locationState === 'remote') {
-            query = query.ilike('location', '%remote%');
-        } else {
-            query = query.ilike('location', `%${locationState}%`);
-        }
+        values.push(`%${locationState}%`);
+        where += ` AND array_to_string(locations, ' ') ILIKE $${values.length}`;
     }
 
-    // Apply search filter
     if (search) {
-        query = query.or(`title.ilike.%${search}%,company.ilike.%${search}%,location.ilike.%${search}%,description.ilike.%${search}%`);
+        values.push(`%${search}%`);
+        where += ` AND (title ILIKE $${values.length} OR company ILIKE $${values.length} OR description ILIKE $${values.length} OR EXISTS (SELECT 1 FROM unnest(locations) l WHERE l ILIKE $${values.length}))`;
     }
 
-    const { data, error, count } = await query
-        .range(page * limit, (page + 1) * limit - 1)
-        .order('created', { ascending: false });
+    values.push(limit, offset);
+    const sql = `
+        SELECT id, title, company, locations, applied, viewed, logo
+        FROM jobs
+        ${where}
+        ORDER BY created DESC
+        LIMIT $${values.length - 1} OFFSET $${values.length}
+    `;
 
-    if (error) throw new Error(JSON.stringify(error));
+    const { rows } = await pool.query(sql, values);
 
-    const jobs = (data as Tables<'jobs'>[]);
-
-    console.log(`Found ${jobs.length} jobs to display (page ${page})`);
+    const countSql = `SELECT COUNT(*) FROM jobs ${where}`;
+    const { rows: countRows } = await pool.query(countSql, values.slice(0, values.length - 2));
+    const total = parseInt(countRows[0].count, 10);
 
     return {
-        items: jobs,
-        total: count || 0,
-        hasMore: count ? (page + 1) * limit < count : false
+        items: rows,
+        total,
+        hasMore: (page + 1) * limit < total
     };
 }
 
 export async function viewJob(id: string): Promise<Job | undefined> {
-    const { data } = await supabase.from('jobs').select().eq('id', id as any).maybeSingle();
-    if (!data) {
+    const { rows } = await pool.query('select * from jobs where id = $1', [id]);
+    if (!rows) {
         console.log(`Job doesn't exist: ${id}`);
         return;
     }
 
     toggle('viewed', id, true);
 
+    const record = rows[0];
     const job = {
-        ...data,
-        "html": data.html || data.description,
+        ...record,
+        "html": record.html || record.description,
         "description": "",
-        "created": new Date(data.created),
-        "updated": new Date(data.updated),
+        "created": new Date(record.created),
+        "updated": new Date(record.updated),
     };
 
     return job;
@@ -155,7 +143,7 @@ async function toggle(
     id: string,
     shouldHave: boolean
 ): Promise<void> {
-    await supabase.from('jobs').update({ [key]: shouldHave }).eq('id', id as any);
+    await pool.query(`update jobs set ${key} = $1 where id = $2`, [shouldHave, id]);
 }
 
 export const ignoreJob = (id: string) => toggle('ignored', id, true)

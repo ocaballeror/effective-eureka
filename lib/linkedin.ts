@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
 import { getStore } from '@netlify/blobs';
+import { dbid } from './postgres';
 
 type Cookie = {
     name: string;
@@ -30,10 +30,11 @@ async function getCookies(): Promise<Cookie[]> {
     const cookies = await store.get('cookies', { type: 'json' });
     if (cookies) return cookies;
 
-    const { data, error } = await supabase.storage.from('bucket').download('cookies.json');
-    if (!data || error) {
-        throw new Error(JSON.stringify(error));
-    }
+    const data = await fetch(`https://${dbid}.supabase.co/storage/v1/object/public/bucket/cookies.json`)
+    // const { data, error } = await supabase.storage.from('bucket').download('cookies.json');
+    // if (!data || error) {
+    //     throw new Error(JSON.stringify(error));
+    // }
 
     const newcookies = JSON.parse(await data.text());
     await store.setJSON('cookies', newcookies);

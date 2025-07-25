@@ -301,7 +301,7 @@ function createJobEl(job) {
     const textContent = document.createElement('div');
     textContent.className = 'job-text-content';
     textContent.innerHTML = `<h3>${job.title}</h3>
-                       <div class="meta">${job.company} · ${job.location}</div>`;
+                       <div class="meta">${job.company} · ${(Array.isArray(job.locations) ? job.locations.join(', ') : job.locations || '')}</div>`;
     content.appendChild(textContent);
 
     el.appendChild(content);
@@ -391,7 +391,7 @@ function showDetails(job) {
     els.detailsError.classList.add('hidden');
 
     els.details.querySelector('h2').innerText = job.title;
-    els.details.querySelector('div.info').innerText = `${job.company} · ${job.location}`;
+    els.details.querySelector('div.info').innerText = `${job.company} · ${(Array.isArray(job.locations) ? job.locations.join(', ') : job.locations || '')}`;
     els.details.querySelector('a.apply-btn').href = job.link;
 
     // Show/hide summarize button based on summary availability
