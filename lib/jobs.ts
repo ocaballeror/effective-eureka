@@ -143,7 +143,7 @@ async function toggle(
     id: string,
     shouldHave: boolean
 ): Promise<void> {
-    await pool.query(`update jobs set ${key} = $1 where id = $2`, [shouldHave, id]);
+    await pool.query(`update jobs set ${key} = $1, updated = now() where id = $2`, [shouldHave, id]);
 }
 
 export const ignoreJob = (id: string) => toggle('ignored', id, true)
